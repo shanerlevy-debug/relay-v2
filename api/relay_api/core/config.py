@@ -77,5 +77,18 @@ class Settings(BaseSettings):
     RELAY_USERS_PER_WORKSPACE: int = 25
     RELAY_AGENTS_PER_WORKSPACE: int = 25
 
+    # ---- Bridge process (Socket Mode + CMA) ----
+    # App-Level Token for Slack Socket Mode. One per Slack App regardless
+    # of how many workspaces install it. The per-workspace bot tokens
+    # (xoxb-...) come from workspace_slack_installs at event time.
+    RELAY_SLACK_APP_TOKEN: str | None = None
+
+    # Slash command name (defaults to /ask). Must match the Slack App manifest.
+    RELAY_SLACK_SLASH_COMMAND: str = "/ask"
+
+    # Debug — when true, the bridge logs every CMA stream event type.
+    # Useful for SDK-shape discovery; turn off in steady state.
+    RELAY_BRIDGE_LOG_EVENT_TYPES: bool = False
+
 
 settings = Settings()
