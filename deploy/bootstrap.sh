@@ -24,6 +24,10 @@ fi
 
 echo "==> [1/10] System packages"
 apt-get update -qq
+# Ubuntu 22.04 ships Python 3.10; we need 3.12. Add the deadsnakes PPA.
+apt-get install -y -qq software-properties-common
+add-apt-repository -y ppa:deadsnakes/ppa
+apt-get update -qq
 apt-get install -y -qq \
     git curl ca-certificates build-essential \
     python3.12 python3.12-venv python3.12-dev python3-pip \
