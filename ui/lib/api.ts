@@ -169,3 +169,71 @@ export async function signup(req: SignupRequest): Promise<SessionOut> {
 export async function logout(): Promise<void> {
   return apiFetch<void>("/api/auth/logout", { method: "POST" });
 }
+
+// ---------------------------------------------------------------------------
+// Agents
+// ---------------------------------------------------------------------------
+
+export interface AgentOut {
+  id: string;
+  workspace_id: string;
+  slug: string;
+  anthropic_agent_id: string;
+  environment_id: string;
+  description: string | null;
+  is_default: boolean;
+  created_at: string;
+  archived_at: string | null;
+}
+
+export interface AgentSeats {
+  active: number;
+  cap: number;
+}
+
+export interface AgentListOut {
+  agents: AgentOut[];
+  seats: AgentSeats;
+}
+
+export interface AgentCreateRequest {
+  slug: string;
+  anthropic_agent_id: string;
+  environment_id: string;
+  description?: string | null;
+  is_default?: boolean;
+}
+
+export interface AgentUpdateRequest {
+  slug?: string;
+  anthropic_agent_id?: string;
+  environment_id?: string;
+  description?: string | null;
+  is_default?: boolean;
+}
+
+export async function listAgents(): Promise<AgentListOut> {
+  return apiFetch<AgentListOut>("/api/agents");
+}
+
+export async function listAgentsServer(): Promise<AgentListOut> {
+  return serverFetch<AgentListOut>("/api/agents");
+}
+
+export async function createAgent(req: AgentCreateRequest): Promise<AgentOut> {
+  return apiFetch<AgentOut>("/api/agents", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export async function updateAgent(id: string, req: AgentUpdateRequest): Promise<AgentOut> {
+  return apiFetch<AgentOut>(`/api/agents/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(req),
+  });
+}
+
+export async function archiveAgent(id: string): Promise<void> {
+  return apiFetch<void>(`/api/agents/${id}`, { method: "DELETE" });
+}
