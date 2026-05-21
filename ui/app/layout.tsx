@@ -26,7 +26,7 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Relay — Slack ↔ Claude managed agents",
   description:
-    "Mention @relay in any channel, get an answer in the thread. Bring your own Anthropic key, up to 25 agents per workspace.",
+    "Your Claude agents, one mention away. @relay in any channel; answers land in the thread. BYO Anthropic key, up to 25 agents per workspace.",
   icons: [{ rel: "icon", url: "/relay-logo-512.png" }],
 };
 

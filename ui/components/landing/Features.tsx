@@ -63,10 +63,8 @@ export function Features() {
         </h2>
 
         <div
+          className="rl-features-grid"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 1,
             background: "var(--color-border)",
             border: "1px solid var(--color-border)",
             borderRadius: 8,

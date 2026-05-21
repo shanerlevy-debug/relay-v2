@@ -22,8 +22,9 @@
   --slack-blue:      #36C5F0;
   --slack-red:       #E01E5A;
 
-  /* Fraunces — for editorial italic accents on the landing page */
-  --font-serif: "Fraunces", "Times New Roman", serif;
+  /* Fraunces — for editorial italic accents on the landing page.
+   * `--font-serif-loaded` comes from next/font; static fallbacks behind it. */
+  --font-serif: var(--font-serif-loaded), "Fraunces", "Times New Roman", serif;
 }
 
 /* ---------- Replace Powerloom accent with Relay coral ---------- */
@@ -305,3 +306,95 @@ button { font-family: inherit; }
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ==========================================================================
+ * Landing page — responsive grids
+ *
+ * The landing components used to set `gridTemplateColumns` inline, which
+ * meant nothing collapsed below 1240px. These classes own the column
+ * shape so we can add media queries.
+ * ========================================================================== */
+
+.rl-hero-inner {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.rl-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px;
+}
+
+.rl-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+}
+
+.rl-commands-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.rl-callout-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 48px;
+  align-items: center;
+}
+
+.rl-footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+
+/* Tablet — collapse 3-col grids to 2-col, 2-col grids to single column. */
+@media (max-width: 960px) {
+  .rl-hero-inner { grid-template-columns: 1fr; gap: 40px; }
+  .rl-grid-3 { grid-template-columns: 1fr 1fr; }
+  .rl-features-grid { grid-template-columns: repeat(2, 1fr); }
+  .rl-commands-grid { grid-template-columns: 1fr; gap: 32px; }
+  .rl-callout-grid { grid-template-columns: 1fr; gap: 24px; }
+  .rl-footer-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Phone — single column everywhere; pull section padding tighter. */
+@media (max-width: 640px) {
+  .rl-section { padding: 64px 20px; }
+  .rl-grid-3 { grid-template-columns: 1fr; gap: 24px; }
+  .rl-features-grid { grid-template-columns: 1fr; }
+  .rl-footer-grid { grid-template-columns: 1fr; gap: 32px; }
+}
+
+/* ---------- Landing topnav — link visibility + hover ---------- */
+.rl-topnav-link {
+  color: rgb(var(--ink-100));
+  transition: color var(--duration-1) var(--ease-std);
+}
+.rl-topnav-link:hover { color: rgb(var(--paper-50)); }
+
+@media (max-width: 860px) {
+  .rl-topnav-tag,
+  .rl-topnav-links,
+  .rl-topnav-divider,
+  .rl-topnav-signin { display: none; }
+  .rl-topnav-inner { gap: 16px; }
+}
+
+/* ---------- Landing footer — link hover ---------- */
+.rl-footer-link {
+  transition: color var(--duration-1) var(--ease-std);
+}
+.rl-footer-link:hover { color: rgb(var(--paper-50)); }
+
+/* ---------- Powerloom callout CTA — hover ---------- */
+.rl-callout-cta {
+  transition: background var(--duration-1) var(--ease-std);
+}
+.rl-callout-cta:hover { background: rgb(var(--thread-700)); }

@@ -24,29 +24,23 @@ export function HowItWorks() {
           You bring the Slack workspace and the Anthropic key. Relay does the boring middle.
         </p>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 32,
-          }}
-        >
+        <div className="rl-grid-3">
           <Step
             n="01"
             title="Create your workspace"
-            body="Sign up with email + password. Install Relay to Slack via OAuth — two minutes, no service account needed."
+            body="Sign up with email + password, then install Relay to Slack via OAuth. Two minutes, no service-account dance."
             visual={<SlackInstallVisual />}
           />
           <Step
             n="02"
             title="Paste your Anthropic key"
-            body="Drop your sk-ant- key in Settings. Encrypted at rest with AES-256-GCM. Your spend, your control."
+            body="Drop your sk-ant-… key into Settings. Envelope-encrypted at rest (AES-256-GCM). Your spend, your control."
             visual={<KeyVisual />}
           />
           <Step
             n="03"
             title="@relay it"
-            body="Add up to 25 agents by slug. Mention @relay or /relay <slug> in any channel. Replies post back in the thread."
+            body="Add agents by slug — up to 25 per workspace. Mention @relay or /relay <slug> anywhere in Slack; replies post back in the thread."
             visual={<ThreadVisual />}
           />
         </div>
