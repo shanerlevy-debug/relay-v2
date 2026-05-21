@@ -299,3 +299,33 @@ export async function inviteUser(req: InviteCreateRequest): Promise<InviteCreate
 export async function deleteUser(id: string): Promise<void> {
   return apiFetch<void>(`/api/users/${id}`, { method: "DELETE" });
 }
+
+// ---------------------------------------------------------------------------
+// Anthropic key (BYOK)
+// ---------------------------------------------------------------------------
+
+export interface AnthropicKeyStatus {
+  has_key: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+  created_by_user_id: string | null;
+}
+
+export async function getAnthropicKeyStatus(): Promise<AnthropicKeyStatus> {
+  return apiFetch<AnthropicKeyStatus>("/api/workspace/anthropic-key");
+}
+
+export async function getAnthropicKeyStatusServer(): Promise<AnthropicKeyStatus> {
+  return serverFetch<AnthropicKeyStatus>("/api/workspace/anthropic-key");
+}
+
+export async function setAnthropicKey(key: string): Promise<AnthropicKeyStatus> {
+  return apiFetch<AnthropicKeyStatus>("/api/workspace/anthropic-key", {
+    method: "PUT",
+    body: JSON.stringify({ key }),
+  });
+}
+
+export async function deleteAnthropicKey(): Promise<void> {
+  return apiFetch<void>("/api/workspace/anthropic-key", { method: "DELETE" });
+}
