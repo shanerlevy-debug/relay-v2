@@ -54,6 +54,9 @@ packages = ["relay_api"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "dbtest: tests that require a live Postgres (skipped with `-m 'not dbtest'`)",
+]
 
 [tool.ruff]
 line-length = 100

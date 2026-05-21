@@ -1,16 +1,26 @@
 """SQLAlchemy engine + session factory."""
 from __future__ import annotations
 
-from sqlalchemy import create_engine
+from datetime import datetime
+
+from sqlalchemy import DateTime, create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from relay_api.core.config import settings
 
 
 class Base(DeclarativeBase):
-    """Shared declarative base for all ORM models."""
+    """Shared declarative base for all ORM models.
 
-    pass
+    `type_annotation_map` makes every `Mapped[datetime]` field land as a
+    TIMESTAMPTZ column instead of TIMESTAMP WITHOUT TIME ZONE. Audit
+    clarity in a multi-tenant SaaS is worth more than the column-size
+    delta, and "every time on the wire is in UTC" is the right invariant.
+    """
+
+    type_annotation_map = {
+        datetime: DateTime(timezone=True),
+    }
 
 
 # Single engine per process. pool_pre_ping guards against stale connections
