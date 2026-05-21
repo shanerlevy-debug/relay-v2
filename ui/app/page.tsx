@@ -122,7 +122,7 @@ function Hero() {
           </div>
 
           <h1 className="rl-display-xl" style={{ color: "rgb(var(--paper-50))", maxWidth: 720 }}>
-            Run your Claude agents <em>from Slack.</em>
+            Your Claude agents, <em>one mention away.</em>
           </h1>
 
           <p
@@ -134,17 +134,17 @@ function Hero() {
               margin: "28px 0 36px",
             }}
           >
-            Relay is the thin bridge between Slack and Claude managed agents.
             Mention{" "}
             <span className="mono" style={{ color: "rgb(var(--relay-300))" }}>
               @relay
             </span>{" "}
-            in any channel, get an answer in the thread. Bring your own Anthropic key.
+            in any channel — answers land in the thread. The thin bridge between
+            Slack and Claude managed agents. Bring your own Anthropic key.
           </p>
 
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 48 }}>
             <Link href="/signup" className="rl-btn rl-btn-primary rl-btn-lg">
-              Create workspace — it&apos;s free
+              Start free in 2 minutes
             </Link>
             <Link
               href="/login"
@@ -173,8 +173,8 @@ function Hero() {
             }}
           >
             <span>✓ BYO Anthropic key</span>
-            <span>✓ OAuth per workspace</span>
-            <span>✓ Up to 25 users, 25 agents</span>
+            <span>✓ Slack OAuth, workspace-scoped</span>
+            <span>✓ 25 users · 25 agents</span>
           </div>
         </div>
 
