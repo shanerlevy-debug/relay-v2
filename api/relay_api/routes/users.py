@@ -29,6 +29,7 @@ from relay_api.services.invites import (
     InviteError,
     count_workspace_seats,
     create_invite,
+    list_pending_invites,
 )
 from relay_api.services.user_mgmt import UserMgmtError, delete_user, list_workspace_users
 
@@ -45,11 +46,13 @@ def get_users(
     workspace: Workspace = Depends(current_workspace),
     db: Session = Depends(get_db),
 ) -> dict:
-    """List active users + seat counts for the user-management page."""
+    """List active users + pending invites + seat counts."""
     users = list_workspace_users(db, workspace_id=workspace.id)
+    invites = list_pending_invites(db, workspace_id=workspace.id)
     active, pending = count_workspace_seats(db, workspace_id=workspace.id)
     return {
         "users": [UserListItem.model_validate(u) for u in users],
+        "pending_invites": [InviteOut.model_validate(i) for i in invites],
         "seats": WorkspaceSeatsOut(
             active=active,
             pending_invites=pending,

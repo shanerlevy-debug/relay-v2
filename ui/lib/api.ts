@@ -237,3 +237,65 @@ export async function updateAgent(id: string, req: AgentUpdateRequest): Promise<
 export async function archiveAgent(id: string): Promise<void> {
   return apiFetch<void>(`/api/agents/${id}`, { method: "DELETE" });
 }
+
+// ---------------------------------------------------------------------------
+// Users + invites
+// ---------------------------------------------------------------------------
+
+export interface UserListItem {
+  id: string;
+  email: string;
+  role: "admin" | "member";
+  email_verified_at: string | null;
+  created_at: string;
+}
+
+export interface InviteOut {
+  id: string;
+  email: string;
+  role: "admin" | "member";
+  expires_at: string;
+  created_at: string;
+  created_by_user_id: string | null;
+}
+
+export interface WorkspaceSeats {
+  active: number;
+  pending_invites: number;
+  cap: number;
+}
+
+export interface UserListOut {
+  users: UserListItem[];
+  pending_invites: InviteOut[];
+  seats: WorkspaceSeats;
+}
+
+export interface InviteCreateRequest {
+  email: string;
+  role?: "admin" | "member";
+}
+
+export interface InviteCreateResponse {
+  invite: InviteOut;
+  invite_url: string;
+}
+
+export async function listUsers(): Promise<UserListOut> {
+  return apiFetch<UserListOut>("/api/users");
+}
+
+export async function listUsersServer(): Promise<UserListOut> {
+  return serverFetch<UserListOut>("/api/users");
+}
+
+export async function inviteUser(req: InviteCreateRequest): Promise<InviteCreateResponse> {
+  return apiFetch<InviteCreateResponse>("/api/users/invite", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  return apiFetch<void>(`/api/users/${id}`, { method: "DELETE" });
+}

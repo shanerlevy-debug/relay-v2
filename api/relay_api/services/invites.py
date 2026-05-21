@@ -58,6 +58,20 @@ def count_workspace_seats(db: Session, *, workspace_id: uuid.UUID) -> tuple[int,
     return int(active), int(pending)
 
 
+def list_pending_invites(db: Session, *, workspace_id: uuid.UUID) -> list[Invite]:
+    """Active invites for the workspace — not yet accepted, not expired.
+    Oldest first so admins see the longest-outstanding ones at the top."""
+    return list(
+        db.execute(
+            select(Invite)
+            .where(Invite.workspace_id == workspace_id)
+            .where(Invite.accepted_at.is_(None))
+            .where(Invite.expires_at > _now())
+            .order_by(Invite.created_at)
+        ).scalars()
+    )
+
+
 def create_invite(
     db: Session,
     *,
