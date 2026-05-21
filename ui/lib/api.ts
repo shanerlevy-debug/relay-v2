@@ -329,3 +329,31 @@ export async function setAnthropicKey(key: string): Promise<AnthropicKeyStatus> 
 export async function deleteAnthropicKey(): Promise<void> {
   return apiFetch<void>("/api/workspace/anthropic-key", { method: "DELETE" });
 }
+
+// ---------------------------------------------------------------------------
+// Audit log
+// ---------------------------------------------------------------------------
+
+export interface AuditLogEntry {
+  id: string;
+  event_type: string;
+  subject_type: string;
+  subject_id: string | null;
+  actor_user_id: string | null;
+  actor_email: string | null;
+  metadata_json: Record<string, unknown>;
+  occurred_at: string;
+}
+
+export interface AuditListOut {
+  entries: AuditLogEntry[];
+  has_more: boolean;
+}
+
+export async function listAudit(limit = 50, offset = 0): Promise<AuditListOut> {
+  return apiFetch<AuditListOut>(`/api/audit?limit=${limit}&offset=${offset}`);
+}
+
+export async function listAuditServer(limit = 50, offset = 0): Promise<AuditListOut> {
+  return serverFetch<AuditListOut>(`/api/audit?limit=${limit}&offset=${offset}`);
+}
