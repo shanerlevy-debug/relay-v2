@@ -83,8 +83,8 @@ class Settings(BaseSettings):
     # (xoxb-...) come from workspace_slack_installs at event time.
     RELAY_SLACK_APP_TOKEN: str | None = None
 
-    # Slash command name (defaults to /ask). Must match the Slack App manifest.
-    RELAY_SLACK_SLASH_COMMAND: str = "/ask"
+    # Slash command name. Must match the Slack App manifest's slash_commands entry.
+    RELAY_SLACK_SLASH_COMMAND: str = "/relay"
 
     # Debug — when true, the bridge logs every CMA stream event type.
     # Useful for SDK-shape discovery; turn off in steady state.
