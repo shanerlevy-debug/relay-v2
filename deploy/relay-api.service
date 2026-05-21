@@ -1,0 +1,27 @@
+[Unit]
+Description=Relay v2 — FastAPI gateway
+Documentation=https://github.com/shanerlevy-debug/relay-v2
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=relay
+Group=relay
+WorkingDirectory=/opt/relay/api
+EnvironmentFile=/etc/relay/secrets.env
+ExecStart=/opt/relay/api/.venv/bin/uvicorn relay_api.main:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/relay /var/log/relay
+
+[Install]
+WantedBy=multi-user.target

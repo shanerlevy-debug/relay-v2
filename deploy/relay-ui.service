@@ -1,0 +1,30 @@
+[Unit]
+Description=Relay v2 — Next.js UI
+Documentation=https://github.com/shanerlevy-debug/relay-v2
+After=network-online.target relay-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=relay
+Group=relay
+WorkingDirectory=/opt/relay/ui
+EnvironmentFile=/etc/relay/secrets.env
+Environment=NODE_ENV=production
+Environment=PORT=3006
+Environment=HOSTNAME=127.0.0.1
+ExecStart=/usr/bin/node /opt/relay/ui/node_modules/.bin/next start --port 3006 --hostname 127.0.0.1
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/relay /var/log/relay /opt/relay/ui/.next/cache
+
+[Install]
+WantedBy=multi-user.target
