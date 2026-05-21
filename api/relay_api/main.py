@@ -33,6 +33,7 @@ from relay_api.routes import (  # noqa: E402
     me,
     oauth_slack,
     users,
+    workspace as workspace_routes,
 )
 
 configure_logging()
@@ -81,6 +82,7 @@ def create_app() -> FastAPI:
     app.include_router(users.router)
     app.include_router(invites.router)
     app.include_router(agents.router)
+    app.include_router(workspace_routes.router)
 
     log.info("app_created")
     return app

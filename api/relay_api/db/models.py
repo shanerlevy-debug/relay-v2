@@ -466,6 +466,42 @@ class SlackThread(Base):
     )
 
 
+class WorkspaceAnthropicKey(Base):
+    """BYO Anthropic API key, AES-256-GCM enveloped.
+
+    One row per workspace (PK = workspace_id). Set/replace via UPSERT;
+    delete by row removal. The plaintext key is never returned from any
+    API endpoint — only `has_key: bool` status. The bridge process reads
+    it via direct DB query + decrypt(aad=workspace_id.bytes) just-in-time
+    on each CMA session create.
+    """
+
+    __tablename__ = "workspace_anthropic_keys"
+
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    key_nonce: Mapped[bytes] = mapped_column(LargeBinary(12), nullable=False)
+    key_ct: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
 class EnterpriseRequest(Base):
     """Lead-gen capture. Hit one of the deliberate-ceiling features (25-user
     limit, 25-agent limit, SSO, SOC2, custom contract) and the UI records a
