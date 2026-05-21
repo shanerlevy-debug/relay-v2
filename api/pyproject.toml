@@ -1,0 +1,64 @@
+[project]
+name = "relay-api"
+version = "0.1.0"
+description = "Relay multi-tenant Slack <-> Claude Managed Agents control plane"
+requires-python = ">=3.12"
+
+dependencies = [
+    # Web framework
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "email-validator>=2.2.0",
+    "pydantic-settings>=2.6.0",
+    # Database
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14.0",
+    "psycopg[binary]>=3.2.3",
+    # Observability
+    "structlog>=24.4.0",
+    # Configuration
+    "python-dotenv>=1.0.1",
+    # Crypto for envelope store
+    "cryptography>=43.0.0,<46.0.0",
+    # HTTP client for Slack OAuth + Anthropic
+    "httpx>=0.27.0",
+    # Signed cookies for OAuth state (lifted from Powerloom)
+    "itsdangerous>=2.2.0",
+    # JWTs for the session cookie
+    "pyjwt>=2.9.0",
+    # Argon2id password hashing
+    "argon2-cffi>=23.1.0",
+    # Anthropic SDK (used by the bridge, kept here so all Python services
+    # share one venv if we end up co-locating them).
+    "anthropic>=0.40.0",
+    # Slack Bolt (for the bridge process inside this monorepo)
+    "slack-bolt>=1.21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.7.0",
+    "httpx>=0.27.0",  # for FastAPI's TestClient
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["relay_api"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "N", "UP", "B"]
+ignore = ["E501"]
