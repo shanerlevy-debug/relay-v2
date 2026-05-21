@@ -1,13 +1,65 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 
 import { RelayMark } from "@/components/RelayMark";
+import { ApiError, signup } from "@/lib/api";
 
-/**
- * Signup page placeholder. Mirrors /login's centered-card pattern. The
- * form wires to POST /api/auth/signup in the next commit (along with
- * lib/api.ts + the auth flow).
- */
+const ERROR_MESSAGES: Record<string, { field?: "email" | "password" | "workspace_name"; message: string }> = {
+  email_in_use: {
+    field: "email",
+    message: "An account with this email already exists. Try signing in.",
+  },
+  invalid_email: {
+    field: "email",
+    message: "Email format looks off — double-check.",
+  },
+  weak_password: {
+    field: "password",
+    message: "Use 12 or more characters.",
+  },
+  invalid_workspace_name: {
+    field: "workspace_name",
+    message: "Workspace name can't be empty.",
+  },
+};
+
 export default function SignupPage() {
+  const router = useRouter();
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<string | null>(null);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setErrorField(null);
+    try {
+      await signup({
+        workspace_name: workspaceName,
+        email,
+        password,
+      });
+      router.push("/home");
+      router.refresh();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const known = ERROR_MESSAGES[err.code];
+        setError(known?.message ?? err.message);
+        setErrorField(known?.field ?? null);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div
       style={{
@@ -20,10 +72,7 @@ export default function SignupPage() {
         background: "var(--color-surface)",
       }}
     >
-      <Link
-        href="/"
-        style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}
-      >
+      <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
         <RelayMark size={36} />
         <span
           style={{
@@ -37,7 +86,8 @@ export default function SignupPage() {
         </span>
       </Link>
 
-      <div
+      <form
+        onSubmit={onSubmit}
         style={{
           background: "var(--color-surface-2)",
           border: "1px solid var(--color-border)",
@@ -69,72 +119,77 @@ export default function SignupPage() {
           Free up to 25 users and 25 agents. BYO Anthropic key.
         </p>
 
-        <div style={{ marginBottom: 16 }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "var(--color-fg2)",
-              marginBottom: 6,
-            }}
-          >
-            Workspace name
-          </label>
-          <input type="text" className="rl-input" placeholder="Acme" disabled />
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "var(--color-fg2)",
-              marginBottom: 6,
-            }}
-          >
-            Your email
-          </label>
-          <input type="email" className="rl-input" placeholder="you@company.com" disabled />
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "var(--color-fg2)",
-              marginBottom: 6,
-            }}
-          >
-            Password
-            <span
-              style={{
-                fontWeight: 400,
-                color: "var(--color-fg3)",
-                marginLeft: 6,
-                fontSize: 11,
-              }}
-            >
-              12+ characters
-            </span>
-          </label>
+        <Field label="Workspace name" htmlFor="ws_name" error={errorField === "workspace_name" ? error : null}>
           <input
+            id="ws_name"
+            type="text"
+            value={workspaceName}
+            onChange={(e) => setWorkspaceName(e.target.value)}
+            className="rl-input"
+            placeholder="Acme"
+            required
+            autoFocus
+            disabled={submitting}
+            minLength={2}
+            maxLength={255}
+          />
+        </Field>
+
+        <Field label="Your email" htmlFor="email" error={errorField === "email" ? error : null}>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="rl-input"
+            placeholder="you@company.com"
+            required
+            disabled={submitting}
+          />
+        </Field>
+
+        <Field
+          label="Password"
+          htmlFor="password"
+          hint="12+ characters"
+          error={errorField === "password" ? error : null}
+        >
+          <input
+            id="password"
             type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="rl-input"
             placeholder="••••••••••••"
-            disabled
+            required
+            minLength={12}
+            disabled={submitting}
           />
-        </div>
+        </Field>
+
+        {error && errorField === null && (
+          <div
+            style={{
+              padding: "10px 12px",
+              background: "var(--color-danger-tint)",
+              border: "1px solid var(--color-danger-border)",
+              borderRadius: "var(--radius-sm)",
+              color: "var(--color-danger)",
+              fontSize: 13,
+              marginBottom: 16,
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <button
+          type="submit"
           className="rl-btn rl-btn-primary"
           style={{ width: "100%", justifyContent: "center" }}
-          disabled
+          disabled={submitting}
         >
-          Create workspace
+          {submitting ? "Creating…" : "Create workspace"}
         </button>
 
         <div
@@ -151,18 +206,49 @@ export default function SignupPage() {
             Sign in
           </Link>
         </div>
+      </form>
+    </div>
+  );
+}
 
-        <p
-          className="mono-xs"
-          style={{
-            marginTop: 24,
-            textAlign: "center",
-            color: "var(--color-fg4)",
-          }}
-        >
-          form wires to POST /api/auth/signup next commit
-        </p>
-      </div>
+function Field({
+  label,
+  htmlFor,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  hint?: string;
+  error?: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label
+        htmlFor={htmlFor}
+        style={{
+          display: "block",
+          fontSize: 12,
+          fontWeight: 500,
+          color: "var(--color-fg2)",
+          marginBottom: 6,
+        }}
+      >
+        {label}
+        {hint && (
+          <span style={{ fontWeight: 400, color: "var(--color-fg3)", marginLeft: 6, fontSize: 11 }}>
+            {hint}
+          </span>
+        )}
+      </label>
+      {children}
+      {error && (
+        <div style={{ fontSize: 12, color: "var(--color-danger)", marginTop: 6 }}>
+          {error}
+        </div>
+      )}
     </div>
   );
 }

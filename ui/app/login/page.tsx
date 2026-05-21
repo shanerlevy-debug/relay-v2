@@ -1,12 +1,42 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 
 import { RelayMark } from "@/components/RelayMark";
+import { ApiError, login } from "@/lib/api";
 
-/**
- * Login page placeholder. Real form wires to POST /api/auth/login in
- * the next commit (needs the `lib/api.ts` typed fetch wrapper).
- */
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setErrorCode(null);
+    try {
+      await login({ email, password });
+      router.push("/home");
+      router.refresh();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // Don't leak which field was wrong — the API uses the same code for
+        // unknown email + wrong password.
+        setError("Email or password is incorrect.");
+        setErrorCode(err.code);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div
       style={{
@@ -19,10 +49,7 @@ export default function LoginPage() {
         background: "var(--color-surface)",
       }}
     >
-      <Link
-        href="/"
-        style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}
-      >
+      <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
         <RelayMark size={36} />
         <span
           style={{
@@ -36,7 +63,8 @@ export default function LoginPage() {
         </span>
       </Link>
 
-      <div
+      <form
+        onSubmit={onSubmit}
         style={{
           background: "var(--color-surface-2)",
           border: "1px solid var(--color-border)",
@@ -60,6 +88,7 @@ export default function LoginPage() {
 
         <div style={{ marginBottom: 16 }}>
           <label
+            htmlFor="email"
             style={{
               display: "block",
               fontSize: 12,
@@ -71,15 +100,21 @@ export default function LoginPage() {
             Email
           </label>
           <input
+            id="email"
             type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="rl-input"
             placeholder="you@company.com"
-            disabled
+            required
+            autoFocus
+            disabled={submitting}
           />
         </div>
 
         <div style={{ marginBottom: 24 }}>
           <label
+            htmlFor="password"
             style={{
               display: "block",
               fontSize: 12,
@@ -91,19 +126,45 @@ export default function LoginPage() {
             Password
           </label>
           <input
+            id="password"
             type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="rl-input"
             placeholder="••••••••••••"
-            disabled
+            required
+            disabled={submitting}
           />
         </div>
 
+        {error && (
+          <div
+            style={{
+              padding: "10px 12px",
+              background: "var(--color-danger-tint)",
+              border: "1px solid var(--color-danger-border)",
+              borderRadius: "var(--radius-sm)",
+              color: "var(--color-danger)",
+              fontSize: 13,
+              marginBottom: 16,
+            }}
+          >
+            {error}
+            {errorCode && (
+              <span className="mono-xs" style={{ color: "var(--color-fg4)", marginLeft: 6 }}>
+                ({errorCode})
+              </span>
+            )}
+          </div>
+        )}
+
         <button
+          type="submit"
           className="rl-btn rl-btn-primary"
           style={{ width: "100%", justifyContent: "center" }}
-          disabled
+          disabled={submitting}
         >
-          Sign in
+          {submitting ? "Signing in…" : "Sign in"}
         </button>
 
         <div
@@ -116,25 +177,12 @@ export default function LoginPage() {
             fontSize: 13,
           }}
         >
-          <a href="#" className="link">
-            Forgot password
-          </a>
+          <span style={{ color: "var(--color-fg4)" }}>Forgot password</span>
           <Link href="/signup" className="link">
             Sign up →
           </Link>
         </div>
-
-        <p
-          className="mono-xs"
-          style={{
-            marginTop: 24,
-            textAlign: "center",
-            color: "var(--color-fg4)",
-          }}
-        >
-          form wires to POST /api/auth/login next commit
-        </p>
-      </div>
+      </form>
     </div>
   );
 }
