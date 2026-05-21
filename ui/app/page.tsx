@@ -1,6 +1,12 @@
 import Link from "next/link";
 
 import { HeroSlackPreview } from "@/components/HeroSlackPreview";
+import { CTA } from "@/components/landing/CTA";
+import { Commands } from "@/components/landing/Commands";
+import { Features } from "@/components/landing/Features";
+import { Footer } from "@/components/landing/Footer";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { PowerloomCallout } from "@/components/landing/PowerloomCallout";
 import { RelayMark } from "@/components/RelayMark";
 
 /**
@@ -185,24 +191,12 @@ export default function Landing() {
       <LandingNav />
       <Hero />
 
-      {/* Placeholder for the rest of the landing sections — lift these
-          from the mockup's landing.jsx in subsequent commits. */}
-      <section
-        style={{
-          padding: "80px 32px",
-          textAlign: "center",
-          color: "var(--color-fg3)",
-          fontSize: 14,
-          background: "var(--color-surface)",
-        }}
-      >
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-          More sections coming soon
-        </p>
-        <p style={{ marginTop: 12 }}>
-          How it works · Features · Commands · The deliberate ceiling
-        </p>
-      </section>
+      <HowItWorks />
+      <Features />
+      <Commands />
+      <PowerloomCallout />
+      <CTA />
+      <Footer />
     </div>
   );
 }
