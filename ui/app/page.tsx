@@ -1,0 +1,208 @@
+import Link from "next/link";
+
+import { HeroSlackPreview } from "@/components/HeroSlackPreview";
+import { RelayMark } from "@/components/RelayMark";
+
+/**
+ * Landing page. Dark hero with the animated Slack preview, then light
+ * sections (How it works, Features, Commands, Powerloom callout, CTA).
+ *
+ * For now: ships with just the Nav + Hero. The rest of the landing
+ * sections lift in subsequent commits — they're static markup, no API.
+ */
+
+function LandingNav() {
+  return (
+    <header className="rl-topnav">
+      <div className="rl-topnav-inner">
+        <a href="#" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <RelayMark size={28} />
+          <span
+            style={{
+              fontSize: 17,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              color: "rgb(var(--paper-50))",
+            }}
+          >
+            Relay
+          </span>
+        </a>
+        <span
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 10.5,
+            padding: "3px 8px",
+            border: "1px solid rgb(255 255 255 / 0.12)",
+            borderRadius: 4,
+            color: "rgb(var(--ink-100))",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
+          Slack ↔ Claude
+        </span>
+        <div style={{ flex: 1 }} />
+        <nav style={{ display: "flex", gap: 24, fontSize: 13 }}>
+          <a href="#how" style={{ color: "rgb(var(--ink-100))" }}>
+            How it works
+          </a>
+          <a href="#features" style={{ color: "rgb(var(--ink-100))" }}>
+            Features
+          </a>
+        </nav>
+        <span style={{ width: 1, height: 18, background: "rgb(255 255 255 / 0.1)" }} />
+        <Link
+          href="/login"
+          className="rl-btn"
+          style={{
+            background: "transparent",
+            color: "rgb(var(--paper-50))",
+            border: "1px solid rgb(255 255 255 / 0.18)",
+          }}
+        >
+          Sign in
+        </Link>
+        <Link href="/signup" className="rl-btn rl-btn-primary">
+          Create workspace →
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+function Hero() {
+  return (
+    <section className="rl-hero">
+      <div
+        style={{
+          maxWidth: "var(--content-max-w)",
+          margin: "0 auto",
+          padding: "80px 32px 96px",
+          position: "relative",
+          display: "grid",
+          gridTemplateColumns: "1.1fr 1fr",
+          gap: 56,
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "5px 12px",
+              border: "1px solid rgb(var(--relay-300) / 0.35)",
+              borderRadius: 20,
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              color: "rgb(var(--relay-300))",
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              marginBottom: 28,
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: "rgb(var(--relay-300))",
+                boxShadow: "0 0 10px rgb(var(--relay-300))",
+              }}
+            />
+            By the Powerloom team · private beta
+          </div>
+
+          <h1 className="rl-display-xl" style={{ color: "rgb(var(--paper-50))", maxWidth: 720 }}>
+            Run your Claude agents <em>from Slack.</em>
+          </h1>
+
+          <p
+            style={{
+              fontSize: 20,
+              lineHeight: 1.5,
+              color: "rgb(var(--ink-100))",
+              maxWidth: 560,
+              margin: "28px 0 36px",
+            }}
+          >
+            Relay is the thin bridge between Slack and Claude managed agents.
+            Mention{" "}
+            <span className="mono" style={{ color: "rgb(var(--relay-300))" }}>
+              @relay
+            </span>{" "}
+            in any channel, get an answer in the thread. Bring your own Anthropic key.
+          </p>
+
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 48 }}>
+            <Link href="/signup" className="rl-btn rl-btn-primary rl-btn-lg">
+              Create workspace — it&apos;s free
+            </Link>
+            <Link
+              href="/login"
+              className="rl-btn"
+              style={{
+                background: "transparent",
+                color: "rgb(var(--paper-50))",
+                border: "1px solid rgb(255 255 255 / 0.18)",
+                padding: "12px 20px",
+                fontSize: 14,
+              }}
+            >
+              Sign in →
+            </Link>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 24,
+              alignItems: "center",
+              fontFamily: "var(--font-mono)",
+              fontSize: 12,
+              color: "rgb(var(--ink-300))",
+              flexWrap: "wrap",
+            }}
+          >
+            <span>✓ BYO Anthropic key</span>
+            <span>✓ OAuth per workspace</span>
+            <span>✓ Up to 25 users, 25 agents</span>
+          </div>
+        </div>
+
+        {/* Animated Slack preview */}
+        <HeroSlackPreview />
+      </div>
+    </section>
+  );
+}
+
+export default function Landing() {
+  return (
+    <div>
+      <LandingNav />
+      <Hero />
+
+      {/* Placeholder for the rest of the landing sections — lift these
+          from the mockup's landing.jsx in subsequent commits. */}
+      <section
+        style={{
+          padding: "80px 32px",
+          textAlign: "center",
+          color: "var(--color-fg3)",
+          fontSize: 14,
+          background: "var(--color-surface)",
+        }}
+      >
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          More sections coming soon
+        </p>
+        <p style={{ marginTop: 12 }}>
+          How it works · Features · Commands · The deliberate ceiling
+        </p>
+      </section>
+    </div>
+  );
+}

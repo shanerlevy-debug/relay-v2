@@ -1,0 +1,325 @@
+/* ==========================================================================
+ * Relay v2 — base design tokens (lifted from Powerloom's
+ * `colors_and_type.css` via the mockup, unmodified).
+ *
+ * Component code references SEMANTIC names only (e.g. `--color-fg1`,
+ * `--color-surface-2`). Swap the BASE palette below to reskin without
+ * touching components.
+ * ========================================================================== */
+
+:root {
+  /* ---------- Color — raw palette (rgb triplets for alpha compositing) --- */
+
+  /* Neutrals — warm, not clinical */
+  --paper-50:  250 249 245;
+  --paper-100: 248 247 243;
+  --paper-200: 241 239 233;
+  --paper-300: 230 228 221;
+  --paper-400: 212 209 200;
+  --ink-100:   215 218 223;
+  --ink-300:   131 138 149;
+  --ink-500:    74  81  92;
+  --ink-700:    32  38  48;
+  --ink-900:    15  20  25;
+  --ink-950:     8  11  15;
+
+  /* Accent — Powerloom's "thread blue". Relay overrides this in relay.css. */
+  --thread-300: 142 161 255;
+  --thread-500:  61  91 255;
+  --thread-700:  47  74 204;
+  --thread-900:  30  47 138;
+
+  /* Status — semantic families (backgrounds use 10% alpha). */
+  --success-500:  31 138  92;
+  --success-300:  94 193 148;
+  --warning-500: 180 117   0;
+  --warning-300: 232 171  55;
+  --danger-500:  197  48  48;
+  --danger-300:  232 110 110;
+
+  /* ---------- Type — families ---------- */
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+
+  /* ---------- Type — scale (px) ---------- */
+  --text-3xs: 10px;
+  --text-2xs: 11px;
+  --text-xs:  12px;
+  --text-sm:  13px;
+  --text-md:  14px;
+  --text-lg:  16px;
+  --text-xl:  20px;
+  --text-2xl: 28px;
+  --text-3xl: 40px;
+  --text-4xl: 56px;
+
+  /* ---------- Type — weights ---------- */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* ---------- Type — line heights ---------- */
+  --leading-tight:    1.15;
+  --leading-snug:     1.3;
+  --leading-normal:   1.5;
+  --leading-relaxed:  1.65;
+
+  /* ---------- Type — tracking ---------- */
+  --tracking-tight:   -0.01em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.02em;
+  --tracking-wider:   0.06em;
+
+  /* ---------- Spacing — 4pt grid ---------- */
+  --space-0:   0;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ---------- Radius ---------- */
+  --radius-none: 0;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:  12px;
+
+  /* ---------- Elevation ---------- */
+  --shadow-none: none;
+  --shadow-1:
+    0 1px 2px rgba(15, 20, 25, 0.06),
+    0 1px 1px rgba(15, 20, 25, 0.04);
+  --shadow-2:
+    0 2px 4px rgba(15, 20, 25, 0.06),
+    0 4px 12px rgba(15, 20, 25, 0.08);
+  --shadow-3:
+    0 8px 24px rgba(15, 20, 25, 0.12),
+    0 2px 6px rgba(15, 20, 25, 0.06);
+
+  /* ---------- Motion ---------- */
+  --duration-1: 120ms;
+  --duration-2: 180ms;
+  --duration-3: 240ms;
+  --ease-std: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---------- Layout ---------- */
+  --sidebar-w: 240px;
+  --content-max-w: 1240px;
+  --page-pad: 24px;
+}
+
+/* ==========================================================================
+ * SEMANTIC TOKENS — light (default)
+ * ========================================================================== */
+
+:root {
+  --color-bg:          rgb(var(--paper-100));
+  --color-surface:     rgb(var(--paper-100));
+  --color-surface-2:   rgb(var(--paper-200));
+  --color-surface-3:   rgb(var(--paper-300));
+  --color-surface-inv: rgb(var(--ink-900));
+
+  --color-fg1:   rgb(var(--ink-900));
+  --color-fg2:   rgb(var(--ink-700));
+  --color-fg3:   rgb(var(--ink-500));
+  --color-fg4:   rgb(var(--ink-300));
+  --color-fg-inv: rgb(var(--paper-50));
+
+  --color-border:        rgb(var(--paper-400));
+  --color-border-strong: rgb(var(--ink-300) / 0.4);
+  --color-border-subtle: rgb(var(--paper-300));
+
+  --color-accent:        rgb(var(--thread-500));
+  --color-accent-hover:  rgb(var(--thread-700));
+  --color-accent-tint:   rgb(var(--thread-500) / 0.08);
+  --color-accent-ring:   rgb(var(--thread-500) / 0.35);
+  --color-accent-fg:     rgb(var(--paper-50));
+
+  --color-success:      rgb(var(--success-500));
+  --color-success-tint: rgb(var(--success-500) / 0.10);
+  --color-warning:      rgb(var(--warning-500));
+  --color-warning-tint: rgb(var(--warning-500) / 0.10);
+  --color-danger:       rgb(var(--danger-500));
+  --color-danger-tint:  rgb(var(--danger-500) / 0.08);
+  --color-danger-border: rgb(var(--danger-500) / 0.30);
+  --color-muted-tint:   rgb(var(--ink-500) / 0.08);
+
+  color-scheme: light;
+}
+
+/* ==========================================================================
+ * SEMANTIC TOKENS — dark
+ * ========================================================================== */
+
+:root[data-theme="dark"] {
+  --color-bg:          rgb(var(--ink-950));
+  --color-surface:     rgb(var(--ink-950));
+  --color-surface-2:   rgb(var(--ink-900));
+  --color-surface-3:   rgb(var(--ink-700));
+  --color-surface-inv: rgb(var(--paper-100));
+
+  --color-fg1:   rgb(var(--paper-100));
+  --color-fg2:   rgb(var(--ink-100));
+  --color-fg3:   rgb(var(--ink-300));
+  --color-fg4:   rgb(var(--ink-500));
+  --color-fg-inv: rgb(var(--ink-900));
+
+  --color-border:        rgb(var(--ink-700));
+  --color-border-strong: rgb(var(--ink-500));
+  --color-border-subtle: rgb(var(--ink-900));
+
+  --color-accent:        rgb(var(--thread-300));
+  --color-accent-hover:  rgb(var(--thread-500));
+  --color-accent-tint:   rgb(var(--thread-300) / 0.12);
+  --color-accent-ring:   rgb(var(--thread-300) / 0.40);
+  --color-accent-fg:     rgb(var(--ink-950));
+
+  --color-success:      rgb(var(--success-300));
+  --color-success-tint: rgb(var(--success-300) / 0.12);
+  --color-warning:      rgb(var(--warning-300));
+  --color-warning-tint: rgb(var(--warning-300) / 0.12);
+  --color-danger:       rgb(var(--danger-300));
+  --color-danger-tint:  rgb(var(--danger-300) / 0.12);
+  --color-danger-border: rgb(var(--danger-300) / 0.35);
+  --color-muted-tint:   rgb(var(--ink-300) / 0.10);
+
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+ * BASE ELEMENT STYLES
+ * ========================================================================== */
+
+html {
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  color: var(--color-fg1);
+  background: var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-fg1);
+}
+
+::selection {
+  background: var(--color-accent-tint);
+  color: var(--color-fg1);
+}
+
+/* ==========================================================================
+ * TYPOGRAPHY — semantic classes
+ * ========================================================================== */
+
+.display {
+  font-family: var(--font-sans);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  color: var(--color-fg1);
+}
+
+.h1 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.h2 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+}
+
+.h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.body {
+  font-size: var(--text-md);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+}
+
+.body-sm {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.meta {
+  font-size: var(--text-xs);
+  color: var(--color-fg3);
+  line-height: var(--leading-snug);
+}
+
+.eyebrow {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-fg3);
+  line-height: var(--leading-tight);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: 0;
+}
+
+.mono-xs {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-fg2);
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  color: var(--color-fg1);
+}
+
+.link {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--duration-1) var(--ease-std);
+}
+.link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Focus ring */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--color-accent);
+  border-radius: var(--radius-sm);
+}

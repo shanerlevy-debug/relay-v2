@@ -27,7 +27,7 @@ display_information:
 
 features:
   bot_user:
-    display_name: Relay
+    display_name: relay
     always_online: true
 
   app_home:
@@ -36,8 +36,8 @@ features:
     messages_tab_read_only_enabled: false
 
   slash_commands:
-    - command: /ask
-      description: Ask one of the agents
+    - command: /relay
+      description: Invoke a Claude agent from Slack
       usage_hint: "<agent-slug> <message>"
       should_escape: false
 

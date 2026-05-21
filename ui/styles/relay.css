@@ -1,0 +1,307 @@
+/* ==========================================================================
+ * Relay overrides on top of Powerloom tokens (in tokens.css).
+ *
+ * The big move: replace Powerloom's "thread blue" with Relay's coral
+ * scarlet #E2574F as the primary accent. Same warm-paper neutrals
+ * underneath; the buildup is the same operator-grade restraint.
+ * ========================================================================== */
+
+:root {
+  /* ---------- Relay accent — pastel scarlet ---------- */
+  --relay-50:  255 240 238;
+  --relay-100: 253 224 221;
+  --relay-300: 240 144 138;
+  --relay-500: 226  87  79;   /* #E2574F — primary */
+  --relay-700: 192  55  47;
+  --relay-900: 122  37  33;
+
+  /* Slack brand colors — for badges + workspace icon avatars only */
+  --slack-aubergine: #4A154B;
+  --slack-yellow:    #ECB22E;
+  --slack-green:     #2EB67D;
+  --slack-blue:      #36C5F0;
+  --slack-red:       #E01E5A;
+
+  /* Fraunces — for editorial italic accents on the landing page */
+  --font-serif: "Fraunces", "Times New Roman", serif;
+}
+
+/* ---------- Replace Powerloom accent with Relay coral ---------- */
+:root,
+:root[data-theme="light"] {
+  --color-accent:        rgb(var(--relay-500));
+  --color-accent-hover:  rgb(var(--relay-700));
+  --color-accent-tint:   rgb(var(--relay-500) / 0.10);
+  --color-accent-ring:   rgb(var(--relay-500) / 0.35);
+  --color-accent-fg:     #FFFFFF;
+}
+
+:root[data-theme="dark"] {
+  --color-accent:        rgb(var(--relay-300));
+  --color-accent-hover:  rgb(var(--relay-500));
+  --color-accent-tint:   rgb(var(--relay-300) / 0.14);
+  --color-accent-ring:   rgb(var(--relay-300) / 0.40);
+  --color-accent-fg:     rgb(var(--ink-950));
+}
+
+/* ---------- Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+
+/* ---------- Buttons ---------- */
+.rl-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 500;
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer; user-select: none;
+  transition:
+    background var(--duration-1) var(--ease-std),
+    border-color var(--duration-1) var(--ease-std),
+    color var(--duration-1) var(--ease-std);
+  white-space: nowrap;
+}
+.rl-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-accent);
+}
+
+.rl-btn-primary {
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+}
+.rl-btn-primary:hover { background: var(--color-accent-hover); }
+
+.rl-btn-secondary {
+  background: var(--color-surface-2);
+  color: var(--color-fg1);
+  border-color: var(--color-border);
+}
+.rl-btn-secondary:hover { background: var(--color-surface-3); }
+
+.rl-btn-ghost {
+  background: transparent;
+  color: var(--color-fg1);
+  border-color: var(--color-border);
+}
+.rl-btn-ghost:hover { background: var(--color-surface-2); }
+
+.rl-btn-dark {
+  background: rgb(var(--ink-900));
+  color: rgb(var(--paper-50));
+}
+.rl-btn-dark:hover { background: rgb(var(--ink-700)); }
+
+.rl-btn-lg { padding: 12px 20px; font-size: 14px; }
+
+/* ---------- Inputs ---------- */
+.rl-input {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--color-fg1);
+  width: 100%;
+  transition: border-color var(--duration-1) var(--ease-std),
+              box-shadow var(--duration-1) var(--ease-std);
+}
+.rl-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-ring);
+}
+
+/* ---------- Status badges ---------- */
+.rl-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px;
+  padding: 3px 8px; border-radius: var(--radius-sm);
+}
+.rl-badge .rl-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.rl-badge-success { background: var(--color-success-tint); color: var(--color-success); }
+.rl-badge-success .rl-dot { background: var(--color-success); }
+.rl-badge-warning { background: var(--color-warning-tint); color: var(--color-warning); }
+.rl-badge-warning .rl-dot { background: var(--color-warning); }
+.rl-badge-danger  { background: var(--color-danger-tint); color: var(--color-danger); }
+.rl-badge-danger  .rl-dot { background: var(--color-danger); }
+.rl-badge-muted   { background: var(--color-muted-tint); color: var(--color-fg3); }
+.rl-badge-muted   .rl-dot { background: var(--color-fg3); }
+.rl-badge-accent  { background: var(--color-accent-tint); color: var(--color-accent); }
+.rl-badge-accent  .rl-dot { background: var(--color-accent); }
+
+.rl-pulse { animation: rl-pulse 1.4s ease-in-out infinite; }
+@keyframes rl-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* ---------- Cards ---------- */
+.rl-card {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* ---------- KV grid ---------- */
+.rl-kv {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+}
+.rl-kv-label {
+  font-size: 11px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--color-fg3);
+}
+.rl-kv-value {
+  margin-top: 4px; font-size: 14px;
+  font-family: var(--font-mono);
+  color: var(--color-fg1);
+  word-break: break-all; line-height: 1.35;
+}
+
+/* ---------- Hero typography (landing) ---------- */
+.rl-display-xl {
+  font-family: var(--font-sans);
+  font-size: clamp(56px, 7.5vw, 96px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.96;
+  margin: 0;
+}
+.rl-display-xl em {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.rl-h2 {
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  margin: 0;
+}
+.rl-h2 em {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* ---------- Eyebrow (accent-colored) ---------- */
+.rl-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-accent);
+}
+
+/* ---------- Mono helpers ---------- */
+.mono { font-family: var(--font-mono); }
+.mono-sm { font-family: var(--font-mono); font-size: 12px; }
+.mono-xs { font-family: var(--font-mono); font-size: 11px; color: var(--color-fg3); }
+
+/* ---------- Scrollbar ---------- */
+.rl-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-fg4) transparent;
+}
+.rl-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.rl-scroll::-webkit-scrollbar-track { background: transparent; }
+.rl-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-fg4);
+  border-radius: 4px;
+}
+
+/* ---------- Page section ---------- */
+.rl-section {
+  padding: 96px 32px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.rl-section-inner {
+  max-width: var(--content-max-w);
+  margin: 0 auto;
+}
+
+/* ---------- Topbar/nav (landing) ---------- */
+.rl-topnav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgb(var(--ink-950) / 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  color: rgb(var(--paper-50));
+}
+.rl-topnav-inner {
+  max-width: var(--content-max-w);
+  margin: 0 auto;
+  padding: 14px 32px;
+  display: flex; align-items: center; gap: 28px;
+}
+
+/* ---------- Hero (dark) ---------- */
+.rl-hero {
+  background: rgb(var(--ink-950));
+  color: rgb(var(--paper-50));
+  position: relative;
+  overflow: hidden;
+}
+.rl-hero::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 35%, black 35%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 35%, black 35%, transparent 80%);
+}
+.rl-hero::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 40% at 78% 25%, rgb(var(--relay-500) / 0.18), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 18% 85%, rgb(var(--relay-300) / 0.10), transparent 70%);
+}
+
+/* ---------- Slack-style message (used in landing hero preview + live session) ---------- */
+.rl-slack-msg {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background 120ms;
+}
+.rl-slack-avatar {
+  width: 36px; height: 36px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; color: #fff;
+  flex-shrink: 0; overflow: hidden;
+}
+.rl-slack-author {
+  font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--color-fg1);
+}
+.rl-slack-time {
+  font-size: 11px; color: var(--color-fg3); margin-left: 6px; font-weight: 400;
+}
+.rl-slack-mention {
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+/* ---------- Entry animation ---------- */
+.rl-event-enter {
+  animation: rl-event-enter 240ms var(--ease-std);
+}
+@keyframes rl-event-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
