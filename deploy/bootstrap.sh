@@ -49,6 +49,9 @@ if ! id relay >/dev/null 2>&1; then
 fi
 mkdir -p "$APP_DIR" "$ETC_DIR" "$VAR_DIR" "$LOG_DIR"
 chown -R relay:relay "$APP_DIR" "$VAR_DIR" "$LOG_DIR"
+# /etc/relay is root-owned but relay-group-traversable so the relay
+# user can read secrets.env (mode 0640 root:relay) inside it.
+chown root:relay "$ETC_DIR"
 chmod 750 "$ETC_DIR"
 touch "$REDEPLOY_LOG"
 chown relay:relay "$REDEPLOY_LOG"
