@@ -25,7 +25,15 @@ from relay_api.core.errors import (  # noqa: E402
     request_logging_middleware,
 )
 from relay_api.core.logging import configure_logging, get_logger  # noqa: E402
-from relay_api.routes import auth, health, invites, me, oauth_slack, users  # noqa: E402
+from relay_api.routes import (  # noqa: E402
+    agents,
+    auth,
+    health,
+    invites,
+    me,
+    oauth_slack,
+    users,
+)
 
 configure_logging()
 log = get_logger(__name__)
@@ -72,6 +80,7 @@ def create_app() -> FastAPI:
     app.include_router(oauth_slack.router)
     app.include_router(users.router)
     app.include_router(invites.router)
+    app.include_router(agents.router)
 
     log.info("app_created")
     return app

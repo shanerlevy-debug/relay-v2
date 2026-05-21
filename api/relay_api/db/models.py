@@ -369,6 +369,103 @@ class WorkspaceSlackInstall(Base):
     )
 
 
+class Agent(Base):
+    """Per-workspace agent registry. Replaces v1's agents.yaml git-ops flow.
+
+    Each row maps a workspace-scoped slug ("vanguard", "alfred", …) to an
+    Anthropic CMA `agent_…` ID + `environment_…` ID. The bridge looks up
+    by (workspace_id, slug) on each incoming Slack message.
+
+    `is_default` flags the agent that handles untagged messages. At most
+    one active agent per workspace can be the default (partial unique
+    index enforces this).
+    """
+
+    __tablename__ = "agents"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    anthropic_agent_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    environment_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    is_default: Mapped[bool] = mapped_column(
+        nullable=False,
+        server_default=text("false"),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False,
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    __table_args__ = (
+        # One slug per workspace among active agents. (Reusing a slug
+        # after archiving the previous owner is allowed.)
+        Index(
+            "ix_agents_workspace_slug_active",
+            "workspace_id",
+            "slug",
+            unique=True,
+            postgresql_where=text("archived_at IS NULL"),
+        ),
+        # At most one default agent per workspace among active ones.
+        Index(
+            "ix_agents_workspace_default_active",
+            "workspace_id",
+            unique=True,
+            postgresql_where=text("is_default AND archived_at IS NULL"),
+        ),
+    )
+
+
+class SlackThread(Base):
+    """Pin (channel_id, thread_ts) -> agent for thread continuity.
+
+    Bridge writes a row on the first reply in a thread, then reads it on
+    every subsequent message in that thread to keep routing to the same
+    agent. `last_session_id` is the most recent CMA session ID so the
+    agent retains conversational memory across turns.
+    """
+
+    __tablename__ = "slack_threads"
+
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    channel_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    thread_ts: Mapped[str] = mapped_column(String(32), primary_key=True)
+
+    agent_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    last_session_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
 class EnterpriseRequest(Base):
     """Lead-gen capture. Hit one of the deliberate-ceiling features (25-user
     limit, 25-agent limit, SSO, SOC2, custom contract) and the UI records a
