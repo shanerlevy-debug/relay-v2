@@ -25,7 +25,7 @@ from relay_api.core.errors import (  # noqa: E402
     request_logging_middleware,
 )
 from relay_api.core.logging import configure_logging, get_logger  # noqa: E402
-from relay_api.routes import health  # noqa: E402
+from relay_api.routes import auth, health, me  # noqa: E402
 
 configure_logging()
 log = get_logger(__name__)
@@ -67,6 +67,8 @@ def create_app() -> FastAPI:
 
     # Routers
     app.include_router(health.router)
+    app.include_router(auth.router)
+    app.include_router(me.router)
 
     log.info("app_created")
     return app

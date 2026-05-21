@@ -41,8 +41,9 @@ class Settings(BaseSettings):
 
     # ---- Auth (cookie session) ----
     # HS256 for v1; rotate to RS256 with KMS-backed keys if/when needed.
-    # DO NOT use the default in anything but local dev.
-    JWT_SECRET: str = "dev-secret-do-not-use-in-prod"
+    # DO NOT use the default in anything but local dev. ≥32 bytes (256 bits)
+    # per RFC 7518 §3.2 to silence pyjwt's InsecureKeyLength warning.
+    JWT_SECRET: str = "dev-secret-do-not-use-in-prod-12345678901234567890"
     JWT_ALGORITHM: str = "HS256"
     JWT_ISSUER: str = "relay-api"
     JWT_AUDIENCE: str = "relay-app"
