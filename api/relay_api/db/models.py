@@ -292,6 +292,83 @@ class AuditLog(Base):
 # ---------------------------------------------------------------------------
 
 
+class WorkspaceSlackInstall(Base):
+    """One row per Slack workspace install. Bot token stored AES-256-GCM
+    enveloped with the row's UUID as AAD.
+
+    The partial unique constraint on `slack_team_id WHERE revoked_at IS NULL`
+    guarantees one active install per Slack workspace globally — if a
+    customer tries to install a workspace that's already connected to a
+    different Relay account, the callback 409s with "revoke there first."
+
+    A second partial unique on `workspace_id WHERE revoked_at IS NULL`
+    enforces "one active Slack install per workspace" (the workspace can
+    install many times over its lifetime, just not concurrently).
+    """
+
+    __tablename__ = "workspace_slack_installs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    slack_team_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    slack_team_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    bot_user_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    app_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    enterprise_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    enterprise_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Bot token (xoxb-…). Envelope-encrypted: aad = this row's id.bytes.
+    bot_token_nonce: Mapped[bytes] = mapped_column(
+        LargeBinary(12), nullable=False
+    )
+    bot_token_ct: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+
+    # Granted scopes, denormalized for audit. Empty array represents "none"
+    # but Slack guarantees at least the requested bot scopes on success.
+    scopes_granted: Mapped[list[str]] = mapped_column(
+        JSONB,
+        nullable=False,
+        server_default=text("'[]'::jsonb"),
+    )
+
+    installed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    installed_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False,
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    __table_args__ = (
+        # One active install per Slack workspace, globally.
+        Index(
+            "ix_workspace_slack_installs_team_active",
+            "slack_team_id",
+            unique=True,
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+        # One active Slack install per Relay workspace.
+        Index(
+            "ix_workspace_slack_installs_workspace_active",
+            "workspace_id",
+            unique=True,
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+    )
+
+
 class EnterpriseRequest(Base):
     """Lead-gen capture. Hit one of the deliberate-ceiling features (25-user
     limit, 25-agent limit, SSO, SOC2, custom contract) and the UI records a
