@@ -144,7 +144,7 @@ function SetupView({ step }: { step: number }) {
               @relay runbook
             </span>
           ) : (
-            "Pick a slug"
+            "Pick a name"
           )
         }
         visible={r3Visible}

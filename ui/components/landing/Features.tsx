@@ -29,13 +29,13 @@ const features: Array<{
   },
   {
     Icon: Shuffle,
-    title: "Slug-based agent routing",
+    title: "Name-based agent routing",
     body: "Address agents by name — @relay vanguard or /relay alfred. Thread context keeps follow-ups with the same agent.",
   },
   {
     Icon: Sparkles,
     title: "Up to 25 agents per workspace",
-    body: "Mix Sonnet, Opus, Haiku — your call. Each agent has its own slug, system prompt, and env.",
+    body: "Mix Sonnet, Opus, Haiku — your call. Each agent has its own name, system prompt, and env.",
   },
   {
     Icon: ScrollText,

@@ -40,7 +40,7 @@ export function HowItWorks() {
           <Step
             n="03"
             title="@relay it"
-            body="Add agents by slug — up to 25 per workspace. Mention @relay or /relay <slug> anywhere in Slack; replies post back in the thread."
+            body="Add agents by name — up to 25 per workspace. Mention @relay or /relay <name> anywhere in Slack; replies post back in the thread."
             visual={<ThreadVisual />}
           />
         </div>

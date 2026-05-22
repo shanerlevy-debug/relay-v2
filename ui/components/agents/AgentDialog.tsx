@@ -122,7 +122,7 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
   }, [open, isEdit, mode]);
 
   function validateSlug(value: string): string | null {
-    if (!value) return "slug is required";
+    if (!value) return "display name is required";
     if (!SLUG_RE.test(value)) return "lowercase letters/digits/hyphens, starts with a letter";
     if (value.length > 64) return "max 64 characters";
     return null;
@@ -200,7 +200,7 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
       description={
         editing
           ? "Rename, switch the underlying Anthropic agent, or change the default flag."
-          : "Address this agent in Slack as @relay <slug> ... or /relay <slug> ..."
+          : "Address this agent in Slack as @relay <name> ... or /relay <name> ..."
       }
       maxWidth={560}
     >
@@ -237,7 +237,7 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
         )}
 
         <Field
-          label="Slug"
+          label="Display name"
           hint="lowercase, letters/digits/hyphens, starts with a letter"
           error={errorField === "slug" ? error : null}
         >
@@ -817,9 +817,9 @@ function Field({
 // ---------------------------------------------------------------------------
 
 const FIELD_ERRORS: Record<string, { field: string; message: string }> = {
-  slug: { field: "slug", message: "slug must start with a letter and use only lowercase/digits/hyphens" },
-  invalid_slug: { field: "slug", message: "slug must start with a letter and use only lowercase/digits/hyphens" },
-  slug_in_use: { field: "slug", message: "an active agent already uses this slug" },
+  slug: { field: "slug", message: "display name must start with a letter and use only lowercase/digits/hyphens" },
+  invalid_slug: { field: "slug", message: "display name must start with a letter and use only lowercase/digits/hyphens" },
+  slug_in_use: { field: "slug", message: "an active agent already uses this display name" },
   anthropic_agent_id: { field: "anthropic_agent_id", message: "anthropic_agent_id required" },
   environment_id: { field: "environment_id", message: "environment_id required" },
   archived: { field: "general", message: "this agent is archived — restore it first" },

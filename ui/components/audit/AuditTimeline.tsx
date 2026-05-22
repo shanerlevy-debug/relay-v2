@@ -251,14 +251,14 @@ function summarize(entry: AuditLogEntry): string | null {
   switch (entry.event_type) {
     case "agent.created":
     case "agent.archived":
-      return typeof m.slug === "string" ? `slug: ${m.slug}` : null;
+      return typeof m.slug === "string" ? `name: ${m.slug}` : null;
     case "agent.updated":
       if (typeof m.slug !== "string") return null;
       if (m.changes && typeof m.changes === "object") {
         const keys = Object.keys(m.changes as Record<string, unknown>);
         return `${m.slug} · changed: ${keys.join(", ")}`;
       }
-      return `slug: ${m.slug}`;
+      return `name: ${m.slug}`;
     case "agent.message_routed":
       const slug = typeof m.slug === "string" ? m.slug : "?";
       const reason = typeof m.reason === "string" ? m.reason : "?";

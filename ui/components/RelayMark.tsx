@@ -13,7 +13,7 @@ export function RelayMark({ size = 36, className }: RelayMarkProps) {
   return (
     <Image
       src="/relay-mark.png"
-      alt="Relay"
+      alt="relay"
       width={size}
       height={size}
       priority
@@ -50,7 +50,7 @@ export function RelayWordmark({ size = 32, inverse = false, className }: RelayWo
           lineHeight: 1,
         }}
       >
-        Relay
+        relay
       </span>
     </span>
   );

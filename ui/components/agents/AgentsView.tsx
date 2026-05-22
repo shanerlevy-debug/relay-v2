@@ -84,7 +84,7 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
               color: "var(--color-fg3)",
             }}
           >
-            Address each agent in Slack as <span className="mono">@relay &lt;slug&gt;</span>.
+            Address each agent in Slack as <span className="mono">@relay &lt;name&gt;</span>.
             Set one as the default for untagged messages.
           </p>
         </div>
@@ -167,7 +167,7 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
               marginRight: "auto",
             }}
           >
-            Add an agent to give your team a slug like{" "}
+            Add an agent to give your team a name like{" "}
             <span className="mono">@relay alfred ping</span>.
           </p>
           {isAdmin && (
@@ -189,7 +189,7 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
               alignItems: "center",
             }}
           >
-            <div>Slug</div>
+            <div>Name</div>
             <div>Description</div>
             <div>Default</div>
             <div />

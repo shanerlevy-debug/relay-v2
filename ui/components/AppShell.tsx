@@ -86,7 +86,7 @@ export function AppShell({
         <Link href="/home" className="rl-shell-mobile-bar-brand">
           <RelayMark size={26} />
           <span style={{ fontWeight: 600, fontSize: 15, letterSpacing: "-0.01em" }}>
-            Relay
+            relay
           </span>
         </Link>
         <button
@@ -138,7 +138,7 @@ export function AppShell({
                   color: "var(--color-fg1)",
                 }}
               >
-                Relay
+                relay
               </div>
               <div
                 style={{

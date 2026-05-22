@@ -33,7 +33,7 @@ function LandingNav() {
               color: "rgb(var(--paper-50))",
             }}
           >
-            Relay
+            relay
           </span>
         </Link>
         <span

@@ -9,7 +9,7 @@ export function Commands() {
   const rows: Array<[string, string]> = [
     ["Mention", "@relay summarize this thread"],
     ["Slash command", '/relay vanguard "what\'s happening in semis"'],
-    ["Untagged default", "Hit @relay with no slug — the workspace's default agent answers"],
+    ["Untagged default", "Hit @relay with no name — the workspace's default agent answers"],
     ["DM", "Send @relay a DM for a private session"],
   ];
 

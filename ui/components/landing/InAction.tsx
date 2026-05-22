@@ -49,7 +49,7 @@ export function InAction() {
             </li>
             <li>
               <span className="mono-xs" style={{ marginRight: 10 }}>02</span>
-              Relay routes to the right agent by slug; thread context follows.
+              Relay routes to the right agent by name; thread context follows.
             </li>
             <li>
               <span className="mono-xs" style={{ marginRight: 10 }}>03</span>

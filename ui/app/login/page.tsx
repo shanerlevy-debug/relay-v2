@@ -81,7 +81,7 @@ function LoginPageInner() {
             color: "var(--color-fg1)",
           }}
         >
-          Relay
+          relay
         </span>
       </Link>
 
