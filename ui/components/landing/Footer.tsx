@@ -26,8 +26,9 @@ export function Footer() {
       title: "Company",
       links: [
         { label: "Powerloom", href: "https://powerloom.dev" },
-        { label: "Privacy", href: "#" },
-        { label: "Contact", href: "#" },
+        { label: "Privacy", href: "/privacy" },
+        { label: "Terms", href: "/terms" },
+        { label: "Contact", href: "mailto:hello@relayed.live" },
       ],
     },
   ];
