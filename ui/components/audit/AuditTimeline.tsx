@@ -87,28 +87,14 @@ export function AuditTimeline({ initial, pageSize = PAGE_SIZE }: AuditTimelinePr
 
   return (
     <>
-      <div
-        style={{
-          background: "var(--color-surface-2)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-lg)",
-          overflow: "hidden",
-        }}
-      >
+      <div className="rl-table rl-table-stack-on-mobile">
         {/* Header */}
         <div
+          className="rl-table-head"
           style={{
             display: "grid",
             gridTemplateColumns: "160px 1fr 200px 28px",
             alignItems: "center",
-            padding: "10px 16px",
-            fontSize: 11,
-            fontFamily: "var(--font-mono)",
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            color: "var(--color-fg3)",
-            background: "var(--color-surface-3)",
-            borderBottom: "1px solid var(--color-border)",
           }}
         >
           <div>When</div>
@@ -117,11 +103,10 @@ export function AuditTimeline({ initial, pageSize = PAGE_SIZE }: AuditTimelinePr
           <div />
         </div>
 
-        {entries.map((entry, idx) => (
+        {entries.map((entry) => (
           <AuditRow
             key={entry.id}
             entry={entry}
-            first={idx === 0}
             expanded={expanded.has(entry.id)}
             onToggle={() => toggleExpand(entry.id)}
           />
@@ -175,12 +160,10 @@ export function AuditTimeline({ initial, pageSize = PAGE_SIZE }: AuditTimelinePr
 
 function AuditRow({
   entry,
-  first,
   expanded,
   onToggle,
 }: {
   entry: AuditLogEntry;
-  first: boolean;
   expanded: boolean;
   onToggle: () => void;
 }) {
@@ -189,21 +172,11 @@ function AuditRow({
     <>
       <div
         onClick={hasDetail ? onToggle : undefined}
+        className={`rl-table-row${hasDetail ? " rl-table-row-hoverable" : ""}`}
         style={{
           display: "grid",
           gridTemplateColumns: "160px 1fr 200px 28px",
           alignItems: "center",
-          padding: "12px 16px",
-          fontSize: 13,
-          borderTop: first ? "none" : "1px solid var(--color-border-subtle)",
-          cursor: hasDetail ? "pointer" : "default",
-          transition: "background 120ms",
-        }}
-        onMouseEnter={(e) => {
-          if (hasDetail) e.currentTarget.style.background = "var(--color-surface-3)";
-        }}
-        onMouseLeave={(e) => {
-          if (hasDetail) e.currentTarget.style.background = "transparent";
         }}
       >
         <div className="mono-xs" style={{ color: "var(--color-fg2)", fontSize: 12 }}>

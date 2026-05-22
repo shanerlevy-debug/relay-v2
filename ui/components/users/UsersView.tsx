@@ -73,15 +73,7 @@ export function UsersView({ initial, currentUserId, isAdmin }: UsersViewProps) {
 
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          marginBottom: 24,
-          gap: 16,
-        }}
-      >
+      <div className="rl-page-header">
         <div>
           <h1
             style={{
@@ -98,7 +90,7 @@ export function UsersView({ initial, currentUserId, isAdmin }: UsersViewProps) {
             and the Anthropic key.
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="rl-page-header-actions">
           <span
             style={{
               fontFamily: "var(--font-mono)",
@@ -243,27 +235,13 @@ function ActiveUsersTable({
   onRemove: (user: UserListItem) => void;
 }) {
   return (
-    <div
-      style={{
-        background: "var(--color-surface-2)",
-        border: "1px solid var(--color-border)",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
-      }}
-    >
+    <div className="rl-table rl-table-stack-on-mobile">
       <div
+        className="rl-table-head"
         style={{
           display: "grid",
           gridTemplateColumns: "2fr 100px 130px 80px",
           alignItems: "center",
-          padding: "10px 16px",
-          fontSize: 11,
-          fontFamily: "var(--font-mono)",
-          textTransform: "uppercase",
-          letterSpacing: "0.06em",
-          color: "var(--color-fg3)",
-          background: "var(--color-surface-3)",
-          borderBottom: "1px solid var(--color-border)",
         }}
       >
         <div>Email</div>
@@ -272,18 +250,16 @@ function ActiveUsersTable({
         <div />
       </div>
 
-      {users.map((user, idx) => {
+      {users.map((user) => {
         const isYou = user.id === currentUserId;
         return (
           <div
             key={user.id}
+            className="rl-table-row"
             style={{
               display: "grid",
               gridTemplateColumns: "2fr 100px 130px 80px",
               alignItems: "center",
-              padding: "14px 16px",
-              fontSize: 13,
-              borderTop: idx === 0 ? "none" : "1px solid var(--color-border-subtle)",
             }}
           >
             <div>
@@ -337,27 +313,13 @@ function ActiveUsersTable({
 
 function PendingInvitesTable({ invites }: { invites: InviteOut[] }) {
   return (
-    <div
-      style={{
-        background: "var(--color-surface-2)",
-        border: "1px solid var(--color-border)",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
-      }}
-    >
+    <div className="rl-table rl-table-stack-on-mobile">
       <div
+        className="rl-table-head"
         style={{
           display: "grid",
           gridTemplateColumns: "2fr 100px 130px",
           alignItems: "center",
-          padding: "10px 16px",
-          fontSize: 11,
-          fontFamily: "var(--font-mono)",
-          textTransform: "uppercase",
-          letterSpacing: "0.06em",
-          color: "var(--color-fg3)",
-          background: "var(--color-surface-3)",
-          borderBottom: "1px solid var(--color-border)",
         }}
       >
         <div>Email</div>
@@ -365,16 +327,14 @@ function PendingInvitesTable({ invites }: { invites: InviteOut[] }) {
         <div>Expires</div>
       </div>
 
-      {invites.map((invite, idx) => (
+      {invites.map((invite) => (
         <div
           key={invite.id}
+          className="rl-table-row"
           style={{
             display: "grid",
             gridTemplateColumns: "2fr 100px 130px",
             alignItems: "center",
-            padding: "14px 16px",
-            fontSize: 13,
-            borderTop: idx === 0 ? "none" : "1px solid var(--color-border-subtle)",
           }}
         >
           <div style={{ fontWeight: 500 }}>{invite.email}</div>

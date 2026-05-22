@@ -442,6 +442,174 @@ button { font-family: inherit; }
   .rl-home-cards { grid-template-columns: 1fr; }
 }
 
+/* Console page headers — title + actions. Below 640px, wrap actions
+ * underneath instead of crushing the right side into one column. */
+.rl-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.rl-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .rl-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rl-page-header-actions {
+    justify-content: space-between;
+  }
+}
+
+/* Console data tables — agents, users, audit. They share grid columns
+ * and the same desktop/mobile fall-through behavior. */
+.rl-table {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.rl-table-head {
+  padding: 10px 16px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-fg3);
+  background: var(--color-surface-3);
+  border-bottom: 1px solid var(--color-border);
+}
+.rl-table-row {
+  padding: 14px 16px;
+  font-size: 13px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+.rl-table-row:first-child { border-top: none; }
+.rl-table-row-hoverable {
+  cursor: pointer;
+  transition: background var(--duration-1) var(--ease-std);
+}
+.rl-table-row-hoverable:hover { background: var(--color-surface-3); }
+
+/* When a table needs to drop its grid header on mobile and re-stack
+ * rows vertically, parents add .rl-table-stack-on-mobile. The grids
+ * inside become flex-column-stacks under 640px. */
+@media (max-width: 640px) {
+  .rl-table-stack-on-mobile .rl-table-head { display: none; }
+  .rl-table-stack-on-mobile .rl-table-row {
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 14px 14px;
+  }
+  /* Cells render as labeled rows via data-label */
+  .rl-table-stack-on-mobile .rl-table-row > * {
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+}
+
+/* ==========================================================================
+ * Console mobile shell — sidebar collapses to a top bar with a drawer.
+ * ========================================================================== */
+
+.rl-shell {
+  display: flex;
+  min-height: 100vh;
+}
+.rl-shell-sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+}
+.rl-shell-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.rl-shell-mobile-bar { display: none; }
+.rl-shell-scrim { display: none; }
+
+@media (max-width: 720px) {
+  /* Hide the desktop sidebar; show the mobile top bar + drawer. */
+  .rl-shell-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 40;
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform var(--duration-2) var(--ease-std);
+    box-shadow: 8px 0 24px rgb(0 0 0 / 0.2);
+  }
+  .rl-shell-sidebar[data-open="true"] { transform: translateX(0); }
+
+  .rl-shell-mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .rl-shell-mobile-bar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .rl-shell-mobile-bar-button {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-fg1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .rl-shell-mobile-bar-button:hover { background: var(--color-surface-3); }
+
+  .rl-shell-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / 0.4);
+    z-index: 30;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-2) var(--ease-std);
+  }
+  .rl-shell-scrim[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 /* ==========================================================================
  * Hero animation (HeroFlow) — setup-then-use in one Slack-style window.
  *
