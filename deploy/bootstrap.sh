@@ -47,8 +47,11 @@ echo "==> [2/10] Service user + dirs"
 if ! id relay >/dev/null 2>&1; then
     useradd --system --home-dir "$APP_DIR" --shell /usr/sbin/nologin relay
 fi
-mkdir -p "$APP_DIR" "$ETC_DIR" "$VAR_DIR" "$LOG_DIR"
+mkdir -p "$APP_DIR" "$ETC_DIR" "$VAR_DIR" "$VAR_DIR/agent-icons" "$LOG_DIR"
 chown -R relay:relay "$APP_DIR" "$VAR_DIR" "$LOG_DIR"
+# nginx needs traversal to read agent-icons; relay user owns the files,
+# but world-readable so the nginx worker (www-data) can serve them.
+chmod 755 "$VAR_DIR" "$VAR_DIR/agent-icons"
 # /etc/relay is root-owned but relay-group-traversable so the relay
 # user can read secrets.env (mode 0640 root:relay) inside it.
 chown root:relay "$ETC_DIR"

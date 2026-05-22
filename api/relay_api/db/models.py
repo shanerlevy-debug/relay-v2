@@ -399,6 +399,12 @@ class Agent(Base):
     environment_id: Mapped[str] = mapped_column(String(64), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Per-agent Slack persona — what the bot looks like when it posts.
+    # Both NULL = fall back to the install's default identity ("relay").
+    # slack_icon_url is either an `:emoji:` token or an `https://...` URL.
+    slack_display_name: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    slack_icon_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     is_default: Mapped[bool] = mapped_column(
         nullable=False,
         server_default=text("false"),

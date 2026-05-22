@@ -31,6 +31,33 @@ SLACK_TEXT_LIMIT = 3500  # safe display ceiling; Slack hard limit is 40000
 
 
 # ---------------------------------------------------------------------------
+# persona overrides — chat:write.customize on the install token lets us pick
+# a per-message `username` + `icon_url`/`icon_emoji`.
+# ---------------------------------------------------------------------------
+
+
+def _persona_kwargs(agent) -> dict:
+    """Return the `username` / `icon_*` kwargs for this agent's persona.
+
+    `slack_icon_url` carries either an `:emoji:` token or an `https://...`
+    URL — we route to `icon_emoji` vs `icon_url` accordingly. Empty dict
+    means "use the install's default identity" (the base 'relay' bot).
+    """
+    out: dict[str, str] = {}
+    name = getattr(agent, "slack_display_name", None)
+    if name:
+        out["username"] = name
+    icon = getattr(agent, "slack_icon_url", None)
+    if icon:
+        icon = icon.strip()
+        if icon.startswith(":") and icon.endswith(":"):
+            out["icon_emoji"] = icon
+        elif icon.startswith("https://"):
+            out["icon_url"] = icon
+    return out
+
+
+# ---------------------------------------------------------------------------
 # message chunking (lifted verbatim from v1 — already battle-tested)
 # ---------------------------------------------------------------------------
 
@@ -66,20 +93,38 @@ def _post_reply(
     placeholder_ts: str,
     anchor_ts: str,
     reply: str,
+    persona: dict | None = None,
 ) -> None:
-    """Update the placeholder with the reply. Chunk into thread replies if too long."""
+    """Update the placeholder with the reply. Chunk into thread replies if too long.
+
+    `persona` carries `username` / `icon_*` overrides for the responding
+    agent — applied on every `chat_postMessage` and `chat_update` so the
+    full reply chain wears the same identity.
+
+    Note: Slack accepts `username` / `icon_*` on both `chat_update` and
+    `chat_postMessage`, but only when the bot install has
+    `chat:write.customize`. Without that scope, Slack silently ignores
+    these fields and falls back to the install's default identity.
+    """
+    persona = persona or {}
     chunks = _chunk_text(reply)
     try:
-        client.chat_update(channel=channel_id, ts=placeholder_ts, text=chunks[0])
+        client.chat_update(
+            channel=channel_id, ts=placeholder_ts, text=chunks[0], **persona,
+        )
     except SlackApiError as e:
         log.warning(
             "slack.chat_update_failed",
             error=e.response.get("error"),
             falling_back="postMessage",
         )
-        client.chat_postMessage(channel=channel_id, thread_ts=anchor_ts, text=chunks[0])
+        client.chat_postMessage(
+            channel=channel_id, thread_ts=anchor_ts, text=chunks[0], **persona,
+        )
     for chunk in chunks[1:]:
-        client.chat_postMessage(channel=channel_id, thread_ts=anchor_ts, text=chunk)
+        client.chat_postMessage(
+            channel=channel_id, thread_ts=anchor_ts, text=chunk, **persona,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -210,12 +255,18 @@ def handle_message(
                 pass
             return
 
-        # Update placeholder with the chosen agent name now we know it.
+        # Update placeholder with the chosen agent name + apply the persona
+        # override now that we know which agent will answer.
+        persona = _persona_kwargs(routing.agent)
+        display_label = (
+            routing.agent.slack_display_name or routing.agent.slug
+        )
         try:
             client.chat_update(
                 channel=channel_id,
                 ts=placeholder["ts"],
-                text=f"_{routing.agent.slug} is thinking…_",
+                text=f"_{display_label} is thinking…_",
+                **persona,
             )
         except SlackApiError:
             pass
@@ -246,6 +297,7 @@ def handle_message(
                 placeholder_ts=placeholder["ts"],
                 anchor_ts=anchor_ts,
                 reply=reply,
+                persona=persona,
             )
             return
 
@@ -285,6 +337,7 @@ def handle_message(
         placeholder_ts=placeholder["ts"],
         anchor_ts=anchor_ts,
         reply=reply,
+        persona=persona,
     )
 
 

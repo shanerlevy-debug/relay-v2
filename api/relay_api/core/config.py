@@ -66,10 +66,19 @@ class Settings(BaseSettings):
     # users.info → create a Relay workspace). Existing in-product "Connect
     # Slack" doesn't strictly need them but harmless to grant.
     OAUTH_SLACK_BOT_SCOPES: str = (
-        "app_mentions:read chat:write chat:write.public "
+        "app_mentions:read chat:write chat:write.public chat:write.customize "
         "channels:history im:history im:write commands "
         "users:read users:read.email team:read"
     )
+
+    # ---- Agent icon storage ----
+    # Local filesystem dir where uploaded agent avatars live. Served by
+    # nginx at {RELAY_AGENT_ICON_PUBLIC_BASE}/<workspace_id>/<agent_id>.<ext>.
+    # Single-box deploy; if we ever multi-instance, swap this for S3 behind
+    # a small storage interface in services/agent_icons.py.
+    RELAY_AGENT_ICON_DIR: str = "/var/lib/relay/agent-icons"
+    RELAY_AGENT_ICON_PUBLIC_BASE: str = "https://relayed.live/static/agent-icons"
+    RELAY_AGENT_ICON_MAX_BYTES: int = 1_048_576  # 1 MiB
 
     # ---- Google OAuth (login + signup) ----
     # OAuth 2.0 Web Application client from console.cloud.google.com.

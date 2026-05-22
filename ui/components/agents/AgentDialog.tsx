@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronDown, ExternalLink, Loader2 } from "lucide-react";
+import { ChevronDown, ExternalLink, Image as ImageIcon, Loader2, Smile, X } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 
 import { Dialog } from "@/components/ui/Dialog";
 import {
@@ -13,9 +13,11 @@ import {
   CmaAgentSummary,
   CmaEnvironmentSummary,
   createAgent,
+  deleteAgentIcon,
   listCmaAgents,
   listCmaEnvironments,
   updateAgent,
+  uploadAgentIcon,
 } from "@/lib/api";
 
 const SLUG_RE = /^[a-z][a-z0-9-]*$/;
@@ -54,6 +56,19 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
   const [description, setDescription] = useState("");
   const [isDefault, setIsDefault] = useState(false);
 
+  // Persona state — Slack identity overrides.
+  //
+  // iconValue holds the *persisted* slack_icon_url (either `:emoji:` or `https://...`)
+  // OR is "" if cleared. pendingFile holds a freshly-picked File the user wants
+  // uploaded on save. iconKind switches the UI between emoji / file modes.
+  const [slackDisplayName, setSlackDisplayName] = useState("");
+  const [iconKind, setIconKind] = useState<"none" | "emoji" | "file">("none");
+  const [iconEmoji, setIconEmoji] = useState("");
+  const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   // Submission state
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +90,21 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
       setEnvironmentId(editing.environment_id);
       setDescription(editing.description ?? "");
       setIsDefault(editing.is_default);
+      setSlackDisplayName(editing.slack_display_name ?? "");
+      const existing = editing.slack_icon_url ?? "";
+      if (existing.startsWith(":") && existing.endsWith(":")) {
+        setIconKind("emoji");
+        setIconEmoji(existing);
+        setIconUrl(null);
+      } else if (existing.startsWith("https://")) {
+        setIconKind("file");
+        setIconEmoji("");
+        setIconUrl(existing);
+      } else {
+        setIconKind("none");
+        setIconEmoji("");
+        setIconUrl(null);
+      }
     } else {
       setMode("browse");
       setSlug("");
@@ -82,11 +112,39 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
       setEnvironmentId("");
       setDescription("");
       setIsDefault(false);
+      setSlackDisplayName("");
+      setIconKind("none");
+      setIconEmoji("");
+      setIconUrl(null);
     }
+    setPendingFile(null);
+    setPendingPreview(null);
     setError(null);
     setErrorField(null);
     setBrowseError(null);
   }, [open, editing]);
+
+  function onPickFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) return;
+    setPendingFile(file);
+    setIconKind("file");
+    setIconEmoji("");
+    // Local object URL for the preview pill. Revoked when the dialog
+    // re-opens (effectively when component remounts) or when we save.
+    if (pendingPreview) URL.revokeObjectURL(pendingPreview);
+    setPendingPreview(URL.createObjectURL(file));
+  }
+
+  function onClearIcon() {
+    setIconKind("none");
+    setIconEmoji("");
+    setIconUrl(null);
+    if (pendingPreview) URL.revokeObjectURL(pendingPreview);
+    setPendingPreview(null);
+    setPendingFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   // Fetch CMA lists when we land on browse mode (or change to it)
   useEffect(() => {
@@ -150,29 +208,76 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
       return;
     }
 
+    // Compute the slack_icon_url JSON value based on iconKind:
+    //   none   → null (clear it)
+    //   emoji  → the emoji string (validated server-side)
+    //   file   → leave the column alone in the PATCH/POST body; the actual
+    //            upload happens as a second API call after the row exists
+    let iconUrlForBody: string | null | undefined;
+    if (iconKind === "none") {
+      iconUrlForBody = null; // explicit clear
+    } else if (iconKind === "emoji") {
+      const e = iconEmoji.trim();
+      if (e && !/^:[a-z0-9_+\-]+:$/.test(e)) {
+        setError("emoji must look like :books: — colons, lowercase, underscores, hyphens");
+        setErrorField("slack_icon_url");
+        return;
+      }
+      iconUrlForBody = e || null;
+    } else {
+      // file mode — don't touch the URL field in the JSON body; upload step handles it.
+      iconUrlForBody = undefined;
+    }
+
     setSubmitting(true);
     try {
+      const trimmedName = slackDisplayName.trim();
+      const baseBody = {
+        slug: slug.trim().toLowerCase(),
+        anthropic_agent_id: anthropicAgentId.trim(),
+        environment_id: environmentId.trim(),
+        description: description.trim() || null,
+        is_default: isDefault,
+        slack_display_name: trimmedName || null,
+        ...(iconUrlForBody !== undefined && { slack_icon_url: iconUrlForBody }),
+      };
+
+      let saved: AgentOut;
       if (editing) {
-        const req: AgentUpdateRequest = {
-          slug: slug.trim().toLowerCase(),
-          anthropic_agent_id: anthropicAgentId.trim(),
-          environment_id: environmentId.trim(),
-          description: description.trim() || null,
-          is_default: isDefault,
-        };
-        const updated = await updateAgent(editing.id, req);
-        onSaved(updated);
+        saved = await updateAgent(editing.id, baseBody as AgentUpdateRequest);
       } else {
-        const req: AgentCreateRequest = {
-          slug: slug.trim().toLowerCase(),
-          anthropic_agent_id: anthropicAgentId.trim(),
-          environment_id: environmentId.trim(),
-          description: description.trim() || null,
-          is_default: isDefault,
-        };
-        const created = await createAgent(req);
-        onSaved(created);
+        saved = await createAgent(baseBody as AgentCreateRequest);
       }
+
+      // Second pass — wrapped separately so an upload failure doesn't
+      // make it look like the whole save failed (the agent row is already
+      // committed at this point). Surface the upload error inline; the
+      // parent gets onSaved with the pre-upload row so the list refreshes.
+      if (pendingFile) {
+        try {
+          saved = await uploadAgentIcon(saved.id, pendingFile);
+        } catch (uploadErr) {
+          onSaved(saved);
+          if (uploadErr instanceof ApiError) {
+            const mapped = FIELD_ERRORS[uploadErr.code as keyof typeof FIELD_ERRORS];
+            setError(mapped?.message ?? uploadErr.message);
+            setErrorField(mapped?.field ?? "slack_icon_url");
+          } else {
+            setError("Couldn't upload the icon. Try a smaller PNG/JPEG/GIF.");
+            setErrorField("slack_icon_url");
+          }
+          setSubmitting(false);
+          return;
+        }
+      } else if (
+        iconKind === "none" &&
+        editing?.slack_icon_url?.startsWith("https://")
+      ) {
+        saved = await deleteAgentIcon(saved.id);
+      }
+
+      onSaved(saved);
+      if (pendingPreview) URL.revokeObjectURL(pendingPreview);
       onClose();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -237,8 +342,8 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
         )}
 
         <Field
-          label="Display name"
-          hint="lowercase, letters/digits/hyphens, starts with a letter"
+          label="Name"
+          hint="used to address the agent: @relay <name>. lowercase, letters/digits/hyphens."
           error={errorField === "slug" ? error : null}
         >
           <input
@@ -266,6 +371,128 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
             style={{ fontFamily: "inherit", resize: "vertical", minHeight: 48 }}
           />
         </Field>
+
+        <SectionDivider label="Slack appearance" />
+
+        <Field
+          label="Slack display name"
+          hint="shown when the agent posts in Slack. optional — defaults to 'relay'."
+          error={errorField === "slack_display_name" ? error : null}
+        >
+          <input
+            type="text"
+            value={slackDisplayName}
+            onChange={(e) => setSlackDisplayName(e.target.value)}
+            className="rl-input"
+            placeholder="Alfred"
+            disabled={submitting}
+            maxLength={30}
+          />
+        </Field>
+
+        <Field
+          label="Icon"
+          hint="optional · :emoji: or upload an image"
+          error={errorField === "slack_icon_url" ? error : null}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <IconKindToggle
+              active={iconKind === "emoji"}
+              onClick={() => {
+                setIconKind("emoji");
+                setPendingFile(null);
+                if (pendingPreview) URL.revokeObjectURL(pendingPreview);
+                setPendingPreview(null);
+              }}
+              disabled={submitting}
+            >
+              <Smile size={13} /> Emoji
+            </IconKindToggle>
+            <IconKindToggle
+              active={iconKind === "file"}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={submitting}
+            >
+              <ImageIcon size={13} /> Upload image
+            </IconKindToggle>
+            {(iconKind !== "none" || pendingFile) && (
+              <button
+                type="button"
+                onClick={onClearIcon}
+                disabled={submitting}
+                style={{
+                  background: "transparent",
+                  border: 0,
+                  color: "var(--color-fg3)",
+                  fontSize: 12,
+                  padding: "4px 8px",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <X size={12} /> Clear
+              </button>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/gif"
+            onChange={onPickFile}
+            disabled={submitting}
+            style={{ display: "none" }}
+          />
+
+          {iconKind === "emoji" && (
+            <input
+              type="text"
+              value={iconEmoji}
+              onChange={(e) => setIconEmoji(e.target.value.toLowerCase())}
+              className="rl-input"
+              placeholder=":robot_face:"
+              disabled={submitting}
+              maxLength={64}
+              pattern=":[a-z0-9_+\-]+:"
+            />
+          )}
+
+          {iconKind === "file" && (pendingFile || iconUrl) && (
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--color-fg3)",
+                padding: "6px 10px",
+                background: "var(--color-surface)",
+                border: "1px solid var(--color-border-subtle)",
+                borderRadius: "var(--radius-sm)",
+              }}
+            >
+              {pendingFile
+                ? `Will upload on save: ${pendingFile.name} (${(pendingFile.size / 1024).toFixed(0)} KB)`
+                : "Using the previously uploaded image."}
+            </div>
+          )}
+        </Field>
+
+        <PersonaPreview
+          displayName={slackDisplayName}
+          slug={slug}
+          iconEmoji={iconKind === "emoji" ? iconEmoji : ""}
+          iconUrl={pendingPreview ?? (iconKind === "file" ? iconUrl : null)}
+        />
+
+        <SectionDivider />
 
         <label
           style={{
@@ -327,6 +554,209 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
         </div>
       </form>
     </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Persona section helpers
+// ---------------------------------------------------------------------------
+
+function SectionDivider({ label }: { label?: string }) {
+  if (!label) {
+    return (
+      <hr
+        style={{
+          border: 0,
+          borderTop: "1px solid var(--color-border-subtle)",
+          margin: "20px 0 8px",
+        }}
+      />
+    );
+  }
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        margin: "20px 0 14px",
+      }}
+    >
+      <span
+        style={{
+          fontSize: 11,
+          color: "var(--color-fg3)",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          fontFamily: "var(--font-mono)",
+        }}
+      >
+        {label}
+      </span>
+      <div
+        style={{
+          flex: 1,
+          height: 1,
+          background: "var(--color-border-subtle)",
+        }}
+      />
+    </div>
+  );
+}
+
+function IconKindToggle({
+  active,
+  onClick,
+  disabled,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  disabled: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "6px 12px",
+        fontSize: 13,
+        fontFamily: "inherit",
+        background: active ? "var(--color-accent-tint)" : "var(--color-surface)",
+        color: active ? "var(--color-accent)" : "var(--color-fg2)",
+        border: `1px solid ${active ? "var(--color-accent-ring)" : "var(--color-border)"}`,
+        borderRadius: "var(--radius-sm)",
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "background 120ms var(--ease-std)",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Faux Slack message header showing how the bot will appear when it posts.
+ * Renders the display name (falls back to slug, then "relay") + the avatar.
+ */
+function PersonaPreview({
+  displayName,
+  slug,
+  iconEmoji,
+  iconUrl,
+}: {
+  displayName: string;
+  slug: string;
+  iconEmoji: string;
+  iconUrl: string | null;
+}) {
+  const name = displayName.trim() || slug.trim() || "relay";
+  const showAvatar = !!(iconEmoji || iconUrl);
+
+  return (
+    <div
+      style={{
+        marginBottom: 16,
+        padding: "12px 14px",
+        background: "var(--color-surface)",
+        border: "1px solid var(--color-border-subtle)",
+        borderRadius: "var(--radius-sm)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10.5,
+          color: "var(--color-fg3)",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          fontFamily: "var(--font-mono)",
+          marginBottom: 8,
+        }}
+      >
+        Slack preview
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 6,
+            background: showAvatar ? "transparent" : "var(--color-accent-tint)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            border: "1px solid var(--color-border-subtle)",
+            flexShrink: 0,
+          }}
+        >
+          {iconUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={iconUrl}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : iconEmoji ? (
+            <span style={{ fontSize: 14, fontFamily: "var(--font-mono)" }}>
+              {iconEmoji}
+            </span>
+          ) : (
+            <span
+              style={{
+                fontWeight: 600,
+                fontSize: 14,
+                color: "var(--color-accent)",
+              }}
+            >
+              {name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-fg1)" }}>
+              {name}
+            </span>
+            <span
+              style={{
+                fontSize: 10,
+                padding: "1px 5px",
+                background: "var(--color-fg4)",
+                color: "var(--color-fg-inv)",
+                borderRadius: 3,
+                fontFamily: "var(--font-mono)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                fontWeight: 500,
+              }}
+            >
+              APP
+            </span>
+            <span style={{ fontSize: 11, color: "var(--color-fg3)" }}>
+              just now
+            </span>
+          </div>
+          <div
+            style={{
+              fontSize: 13,
+              color: "var(--color-fg2)",
+              marginTop: 2,
+              lineHeight: 1.4,
+            }}
+          >
+            <em style={{ color: "var(--color-fg3)" }}>
+              How this agent will appear when it replies in Slack.
+            </em>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -817,10 +1247,30 @@ function Field({
 // ---------------------------------------------------------------------------
 
 const FIELD_ERRORS: Record<string, { field: string; message: string }> = {
-  slug: { field: "slug", message: "display name must start with a letter and use only lowercase/digits/hyphens" },
-  invalid_slug: { field: "slug", message: "display name must start with a letter and use only lowercase/digits/hyphens" },
-  slug_in_use: { field: "slug", message: "an active agent already uses this display name" },
+  slug: { field: "slug", message: "name must start with a letter and use only lowercase/digits/hyphens" },
+  invalid_slug: { field: "slug", message: "name must start with a letter and use only lowercase/digits/hyphens" },
+  slug_in_use: { field: "slug", message: "an active agent already uses this name" },
   anthropic_agent_id: { field: "anthropic_agent_id", message: "anthropic_agent_id required" },
   environment_id: { field: "environment_id", message: "environment_id required" },
   archived: { field: "general", message: "this agent is archived — restore it first" },
+  slack_display_name_in_use: {
+    field: "slack_display_name",
+    message: "another active agent already uses that Slack display name",
+  },
+  too_large: {
+    field: "slack_icon_url",
+    message: "icon is too large — keep it under 1 MB",
+  },
+  bad_image_type: {
+    field: "slack_icon_url",
+    message: "icon must be a PNG, JPEG, or GIF",
+  },
+  bad_image: {
+    field: "slack_icon_url",
+    message: "that file isn't a valid image — try a different one",
+  },
+  storage_error: {
+    field: "slack_icon_url",
+    message: "couldn't save the icon — try again or pick another image",
+  },
 };

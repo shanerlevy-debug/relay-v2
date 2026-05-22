@@ -182,6 +182,8 @@ export interface AgentOut {
   environment_id: string;
   description: string | null;
   is_default: boolean;
+  slack_display_name: string | null;
+  slack_icon_url: string | null;
   created_at: string;
   archived_at: string | null;
 }
@@ -202,6 +204,8 @@ export interface AgentCreateRequest {
   environment_id: string;
   description?: string | null;
   is_default?: boolean;
+  slack_display_name?: string | null;
+  slack_icon_url?: string | null;
 }
 
 export interface AgentUpdateRequest {
@@ -210,6 +214,8 @@ export interface AgentUpdateRequest {
   environment_id?: string;
   description?: string | null;
   is_default?: boolean;
+  slack_display_name?: string | null;
+  slack_icon_url?: string | null;
 }
 
 export async function listAgents(): Promise<AgentListOut> {
@@ -236,6 +242,26 @@ export async function updateAgent(id: string, req: AgentUpdateRequest): Promise<
 
 export async function archiveAgent(id: string): Promise<void> {
   return apiFetch<void>(`/api/agents/${id}`, { method: "DELETE" });
+}
+
+export async function uploadAgentIcon(id: string, file: File): Promise<AgentOut> {
+  // Raw fetch — apiFetch() hard-codes Content-Type: application/json, which
+  // would smother the multipart boundary the browser sets for FormData.
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`/api/agents/${id}/icon`, {
+    method: "POST",
+    body: form,
+    credentials: "include",
+  });
+  if (!res.ok) {
+    await throwFromResponse(res);
+  }
+  return res.json() as Promise<AgentOut>;
+}
+
+export async function deleteAgentIcon(id: string): Promise<AgentOut> {
+  return apiFetch<AgentOut>(`/api/agents/${id}/icon`, { method: "DELETE" });
 }
 
 // ---------------------------------------------------------------------------

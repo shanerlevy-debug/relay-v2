@@ -25,6 +25,7 @@ from relay_api.db.models import Agent
 
 _SLUG_RE = re.compile(r"^[a-z][a-z0-9-]*$")
 _MAX_SLUG_LEN = 64
+_MAX_DISPLAY_NAME_LEN = 30
 
 
 class AgentError(Exception):
@@ -140,6 +141,33 @@ def _clear_default(db: Session, *, workspace_id: uuid.UUID) -> None:
     )
 
 
+def _check_display_name_available(
+    db: Session,
+    *,
+    workspace_id: uuid.UUID,
+    display_name: str,
+    exclude_agent_id: uuid.UUID | None = None,
+) -> None:
+    """Raise AgentError("slack_display_name_in_use") if another active agent in
+    this workspace already uses this Slack display name (case-insensitive)."""
+    if not display_name:
+        return
+    stmt = (
+        select(Agent.id)
+        .where(Agent.workspace_id == workspace_id)
+        .where(Agent.archived_at.is_(None))
+        .where(func.lower(Agent.slack_display_name) == display_name.lower())
+    )
+    if exclude_agent_id is not None:
+        stmt = stmt.where(Agent.id != exclude_agent_id)
+    if db.execute(stmt).first() is not None:
+        raise AgentError(
+            f"another active agent already uses the display name "
+            f"{display_name!r} in this workspace",
+            code="slack_display_name_in_use",
+        )
+
+
 def create_agent(
     db: Session,
     *,
@@ -149,13 +177,16 @@ def create_agent(
     environment_id: str,
     description: str | None = None,
     is_default: bool = False,
+    slack_display_name: str | None = None,
+    slack_icon_url: str | None = None,
 ) -> Agent:
     """Create an agent. Caller commits.
 
     Raises AgentError on:
-        invalid_slug          — fails the slug regex
-        slug_in_use           — workspace already has an active agent with this slug
-        agent_limit_reached   — workspace at the 25-agent cap
+        invalid_slug                  — fails the slug regex
+        slug_in_use                   — workspace already has an active agent with this slug
+        agent_limit_reached           — workspace at the 25-agent cap
+        slack_display_name_in_use     — another active agent has this Slack name
     """
     slug = _validate_slug(slug)
     anthropic_agent_id = anthropic_agent_id.strip()
@@ -183,6 +214,12 @@ def create_agent(
             code="slug_in_use",
         )
 
+    # Display-name uniqueness (independent of slug — they're different identifiers).
+    if slack_display_name:
+        _check_display_name_available(
+            db, workspace_id=workspace_id, display_name=slack_display_name
+        )
+
     # If this one is the default, clear any existing default first.
     if is_default:
         _clear_default(db, workspace_id=workspace_id)
@@ -194,6 +231,8 @@ def create_agent(
         environment_id=environment_id,
         description=description,
         is_default=is_default,
+        slack_display_name=slack_display_name,
+        slack_icon_url=slack_icon_url,
     )
     db.add(agent)
     db.flush()
@@ -209,13 +248,24 @@ def update_agent(
     environment_id: str | None = None,
     description: str | None = None,
     is_default: bool | None = None,
+    fields_set: set[str] | None = None,
+    slack_display_name: str | None = None,
+    slack_icon_url: str | None = None,
 ) -> Agent:
-    """Update fields. Pass `None` for any field to leave it unchanged.
+    """Update fields. Pass `None` for legacy fields to leave them unchanged.
+
+    For Slack persona fields (`slack_display_name`, `slack_icon_url`) the
+    "leave unchanged vs clear" distinction matters — passing `None`
+    explicitly should *clear* the column, while omitting the key entirely
+    should leave it alone. The route passes `fields_set` (a set of field
+    names actually present in the inbound request body) to disambiguate.
 
     Raises AgentError on slug collisions or invalid slug shape.
     """
     if agent.archived_at is not None:
         raise AgentError("cannot edit an archived agent", code="archived")
+
+    fs = fields_set if fields_set is not None else set()
 
     if slug is not None:
         new_slug = _validate_slug(slug)
@@ -249,6 +299,20 @@ def update_agent(
         if is_default and not agent.is_default:
             _clear_default(db, workspace_id=agent.workspace_id)
         agent.is_default = bool(is_default)
+
+    # Persona fields use the present-in-request sentinel.
+    if "slack_display_name" in fs:
+        if slack_display_name:
+            _check_display_name_available(
+                db,
+                workspace_id=agent.workspace_id,
+                display_name=slack_display_name,
+                exclude_agent_id=agent.id,
+            )
+        agent.slack_display_name = slack_display_name or None
+
+    if "slack_icon_url" in fs:
+        agent.slack_icon_url = slack_icon_url or None
 
     db.flush()
     return agent

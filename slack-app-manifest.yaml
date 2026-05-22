@@ -49,10 +49,14 @@ oauth_config:
       - app_mentions:read
       - chat:write
       - chat:write.public
+      - chat:write.customize   # per-agent display_name + avatar overrides
       - channels:history
       - im:history
       - im:write
       - commands
+      - users:read              # used by the Add-to-Slack bootstrap to look up installer
+      - users:read.email        # same
+      - team:read               # team metadata (future use)
 
 settings:
   event_subscriptions:
