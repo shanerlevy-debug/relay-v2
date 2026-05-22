@@ -354,6 +354,13 @@ button { font-family: inherit; }
   gap: 48px;
 }
 
+.rl-inaction-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 56px;
+  align-items: center;
+}
+
 /* Tablet — collapse 3-col grids to 2-col, 2-col grids to single column. */
 @media (max-width: 960px) {
   .rl-hero-inner { grid-template-columns: 1fr; gap: 40px; }
@@ -361,6 +368,7 @@ button { font-family: inherit; }
   .rl-features-grid { grid-template-columns: repeat(2, 1fr); }
   .rl-commands-grid { grid-template-columns: 1fr; gap: 32px; }
   .rl-callout-grid { grid-template-columns: 1fr; gap: 24px; }
+  .rl-inaction-grid { grid-template-columns: 1fr; gap: 32px; }
   .rl-footer-grid { grid-template-columns: 1fr 1fr; }
 }
 
@@ -398,3 +406,226 @@ button { font-family: inherit; }
   transition: background var(--duration-1) var(--ease-std);
 }
 .rl-callout-cta:hover { background: rgb(var(--thread-700)); }
+
+/* ==========================================================================
+ * Console shell helpers
+ * ========================================================================== */
+
+.rl-shell-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--color-fg2);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--duration-1) var(--ease-std),
+              color var(--duration-1) var(--ease-std);
+}
+.rl-shell-logout:hover {
+  background: var(--color-surface-3);
+  color: var(--color-fg1);
+}
+
+/* Console-side card grids — 2-col → 1-col under 720px. */
+.rl-home-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 720px) {
+  .rl-home-cards { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+ * Hero animation (HeroFlow) — setup-then-use in one Slack-style window.
+ *
+ * Two views (setup, use) share the same window frame. They cross-fade
+ * with a small translate. Inside each view, individual rows / messages
+ * tick in via opacity + translateY.
+ * ========================================================================== */
+
+.rl-hero-flow {
+  position: relative;
+  background: rgb(var(--paper-100));
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.4),
+    0 8px 16px rgba(0,0,0,0.3);
+  overflow: hidden;
+  min-height: 460px;
+}
+
+.rl-hero-flow-chrome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #E8E5DD;
+  border-bottom: 1px solid #D4D1C8;
+}
+.rl-hero-flow-traffic {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rl-hero-flow-title {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #4A515C;
+  transition: color 320ms var(--ease-std);
+}
+
+/* Body holds both views stacked; we opacity-swap between them. */
+.rl-hero-flow-body {
+  position: relative;
+  background: #FFFFFF;
+  min-height: 410px;
+}
+.rl-hero-flow-view {
+  position: absolute;
+  inset: 0;
+  padding: 22px 22px 18px;
+  transition:
+    opacity 460ms var(--ease-std),
+    transform 460ms var(--ease-std);
+}
+
+/* ─── Setup view ─── */
+
+.rl-hero-flow-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rl-hero-flow-setup-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #838A95;
+  margin-bottom: 4px;
+}
+.rl-hero-flow-row {
+  display: grid;
+  grid-template-columns: 28px 32px 1fr 20px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border: 1px solid #E8E5DD;
+  border-radius: 8px;
+  transition: opacity 360ms var(--ease-std), transform 360ms var(--ease-std);
+}
+.rl-hero-flow-row-n {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #838A95;
+  letter-spacing: 0.04em;
+}
+.rl-hero-flow-row-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rl-hero-flow-row-text {
+  min-width: 0;
+}
+.rl-hero-flow-row-check {
+  display: flex;
+  justify-content: flex-end;
+}
+.rl-hero-flow-connected {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgb(var(--relay-500) / 0.08);
+  color: rgb(var(--relay-700));
+  font-size: 12px;
+  font-weight: 500;
+  align-self: flex-start;
+  transition: opacity 360ms var(--ease-std), transform 360ms var(--ease-std);
+}
+.rl-hero-flow-connected .mono {
+  background: rgb(var(--relay-500) / 0.12);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11.5px;
+}
+
+/* ─── Use view ─── */
+
+.rl-hero-flow-use {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 0;
+}
+.rl-hero-flow-msg {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  padding: 6px 0;
+  animation: rl-event-enter 280ms var(--ease-std);
+}
+.rl-hero-flow-msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rl-hero-flow-cmd {
+  background: rgb(var(--relay-500) / 0.12);
+  color: rgb(var(--relay-700));
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+.rl-hero-flow-code {
+  font-family: var(--font-mono);
+  background: #F1EFE9;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 12.5px;
+}
+.rl-hero-flow-processing {
+  margin: 4px 0;
+  padding: 10px 12px;
+  background: rgb(var(--relay-500) / 0.06);
+  border: 1px solid rgb(var(--relay-500) / 0.18);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: rl-event-enter 280ms var(--ease-std);
+}
+
+/* Phone: hero animation gets a touch shorter so it doesn't dominate. */
+@media (max-width: 640px) {
+  .rl-hero-flow { min-height: 400px; }
+  .rl-hero-flow-body { min-height: 360px; }
+  .rl-hero-flow-view { padding: 16px 14px; }
+  .rl-hero-flow-row { padding: 10px 12px; grid-template-columns: 24px 28px 1fr 18px; gap: 10px; }
+}

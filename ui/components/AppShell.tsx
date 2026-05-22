@@ -252,30 +252,7 @@ export function AppShell({
             </div>
           </div>
 
-          <button
-            onClick={onLogout}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              justifyContent: "flex-start",
-              background: "transparent",
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-sm)",
-              padding: "6px 10px",
-              fontSize: 12,
-              color: "var(--color-fg2)",
-              fontFamily: "inherit",
-              cursor: "pointer",
-              transition: "background 120ms var(--ease-std)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--color-surface-3)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
+          <button onClick={onLogout} className="rl-shell-logout">
             <LogOut size={14} />
             Log out
           </button>

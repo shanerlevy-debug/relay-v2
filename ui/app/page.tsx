@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-import { HeroSlackPreview } from "@/components/HeroSlackPreview";
+import { HeroFlow } from "@/components/HeroFlow";
+import { InAction } from "@/components/landing/InAction";
 import { CTA } from "@/components/landing/CTA";
 import { Commands } from "@/components/landing/Commands";
 import { Features } from "@/components/landing/Features";
@@ -182,8 +183,8 @@ function Hero() {
           </div>
         </div>
 
-        {/* Animated Slack preview */}
-        <HeroSlackPreview />
+        {/* Animated setup-then-use flow */}
+        <HeroFlow />
       </div>
     </section>
   );
@@ -197,6 +198,7 @@ export default function Landing() {
 
       <HowItWorks />
       <Features />
+      <InAction />
       <Commands />
       <PowerloomCallout />
       <CTA />

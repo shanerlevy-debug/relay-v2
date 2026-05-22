@@ -74,14 +74,7 @@ export default async function HomePage() {
       </div>
 
       {/* Top row — setup state */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
+      <div className="rl-home-cards" style={{ marginBottom: 16 }}>
         <SetupCard
           icon={<Slack size={18} />}
           title="Slack workspace"
@@ -110,13 +103,7 @@ export default async function HomePage() {
       </div>
 
       {/* Bottom row — counts */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-        }}
-      >
+      <div className="rl-home-cards">
         <CountCard
           icon={<MessageSquareDashed size={18} />}
           title="Agents"
@@ -140,9 +127,11 @@ export default async function HomePage() {
         />
       </div>
 
-      {/* Audit / Activity preview — coming with the audit endpoint */}
-      <div style={{ marginTop: 32, color: "var(--color-fg3)", fontSize: 13 }}>
-        <span className="mono-xs">/api/audit endpoint + recent activity feed land in the next commit.</span>
+      {/* Pointer to the audit log */}
+      <div style={{ marginTop: 28, fontSize: 13 }}>
+        <Link href="/audit" className="link mono-xs">
+          See recent activity in the audit log →
+        </Link>
       </div>
     </>
   );
