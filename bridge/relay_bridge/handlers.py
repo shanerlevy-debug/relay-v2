@@ -1,16 +1,20 @@
 """Slack event handlers — forked from v1's bridge.py, tenant-scoped.
 
-Three event types:
+Four event surfaces:
   app_mention   @Relay <slug> ... in a channel
   message       DMs to the bot, and threaded follow-ups in channels
                 (gated on a pinned thread to avoid responding to all chatter)
-  command       /ask <slug> ... slash command
+  command       /relay ... slash command
+                  - with text  -> route immediately (same as @mention)
+                  - empty      -> open the "Ask an agent" modal
+  view          relay_invoke_modal submission -> route the modal's pick
 
 The handlers themselves are sync (Slack-Bolt's default — runs in a thread
 pool). Each opens a fresh DB session and resolves the tenant first.
 """
 from __future__ import annotations
 
+import json
 import uuid
 
 from slack_bolt import App
@@ -158,6 +162,110 @@ def _list_active_slugs(db, *, workspace_id: uuid.UUID) -> list[str]:
     """For the help reply when nothing matched."""
     from relay_api.services.agents import list_agents
     return [a.slug for a in list_agents(db, workspace_id=workspace_id)]
+
+
+# ---------------------------------------------------------------------------
+# "Ask an agent" modal — opened when /relay is run with no text. Keeps the
+# discoverability win (pick from a list) without fighting Slack's static
+# slash-command model. The submitted view fires off the same handle_message
+# pipeline as a /relay <agent> <prompt> invocation.
+# ---------------------------------------------------------------------------
+
+MODAL_CALLBACK_ID = "relay_invoke_modal"
+MODAL_AGENT_BLOCK = "agent_block"
+MODAL_AGENT_ACTION = "agent_select"
+MODAL_PROMPT_BLOCK = "prompt_block"
+MODAL_PROMPT_ACTION = "prompt_input"
+
+
+def _truncate(s: str, n: int) -> str:
+    """Slack plain_text fields have hard char caps. Truncate with an ellipsis."""
+    if len(s) <= n:
+        return s
+    return s[: n - 1].rstrip() + "…"
+
+
+def _build_modal(*, agents: list, channel_id: str, team_id: str) -> dict:
+    """Build the Block Kit view JSON for the agent-picker modal.
+
+    `agents` is a list of Agent rows from list_agents() — already filtered to
+    active and ordered. We cap at the first 100 to stay under Slack's
+    static_select limit (well above our 25-agent ceiling, but defensive).
+    """
+    options = []
+    for a in agents[:100]:
+        display = a.slack_display_name or a.slug
+        # 75-char hard cap on plain_text inside an option.
+        if a.slack_display_name and a.slack_display_name.lower() != a.slug.lower():
+            label = _truncate(f"{display}  ·  {a.slug}", 75)
+        else:
+            label = _truncate(display, 75)
+        options.append({
+            "text": {"type": "plain_text", "text": label},
+            "value": a.slug,
+        })
+
+    return {
+        "type": "modal",
+        "callback_id": MODAL_CALLBACK_ID,
+        # Carries channel_id back through the submit roundtrip — Slack
+        # doesn't preserve the slash command's channel context otherwise.
+        "private_metadata": json.dumps({
+            "channel_id": channel_id,
+            "team_id": team_id,
+        }),
+        "title": {"type": "plain_text", "text": "Ask an agent"},
+        "submit": {"type": "plain_text", "text": "Send"},
+        "close": {"type": "plain_text", "text": "Cancel"},
+        "blocks": [
+            {
+                "type": "input",
+                "block_id": MODAL_AGENT_BLOCK,
+                "label": {"type": "plain_text", "text": "Agent"},
+                "element": {
+                    "type": "static_select",
+                    "action_id": MODAL_AGENT_ACTION,
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Pick an agent…",
+                    },
+                    "options": options,
+                },
+            },
+            {
+                "type": "input",
+                "block_id": MODAL_PROMPT_BLOCK,
+                "label": {"type": "plain_text", "text": "Message"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": MODAL_PROMPT_ACTION,
+                    "multiline": True,
+                    "max_length": 3000,
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "what would you like to ask?",
+                    },
+                },
+            },
+        ],
+    }
+
+
+def _build_empty_modal(*, message: str) -> dict:
+    """Fallback view when the workspace has no active agents — shows a
+    helpful message instead of an empty select. Closes back into Slack."""
+    return {
+        "type": "modal",
+        "callback_id": MODAL_CALLBACK_ID + "_noop",
+        "title": {"type": "plain_text", "text": "Ask an agent"},
+        "close": {"type": "plain_text", "text": "Close"},
+        "blocks": [
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": message},
+            },
+        ],
+    }
 
 
 def handle_message(
@@ -425,10 +533,112 @@ def register_handlers(app: App) -> None:
         if not team_id:
             log.warning("event.no_team_id", event_type="slash")
             return
+
+        text = (command.get("text") or "").strip()
+
+        # With args -> behave as before. The router already handles
+        # "<slug> <prompt>" parsing and falls back to default agent.
+        if text:
+            handle_message(
+                client=client,
+                text=text,
+                team_id=team_id,
+                channel_id=command["channel_id"],
+                slack_thread_ts=None,  # slash commands post top-level
+            )
+            return
+
+        # Bare `/relay` — open the picker modal.
+        with SessionLocal() as db:
+            tenant = resolve_tenant(db, team_id=team_id)
+            if tenant is None:
+                # Workspace not connected — don't expose any agent list.
+                # The mention/DM paths already handle this via a quiet
+                # apology; the slash path opens a no-op modal instead.
+                try:
+                    client.views_open(
+                        trigger_id=command["trigger_id"],
+                        view=_build_empty_modal(
+                            message=(
+                                ":warning: This workspace isn't connected to "
+                                "Relay anymore."
+                            ),
+                        ),
+                    )
+                except SlackApiError:
+                    log.exception("slack.views_open_failed", reason="no_tenant")
+                return
+
+            from relay_api.services.agents import list_agents
+            agents = list_agents(db, workspace_id=tenant.workspace.id)
+            if not agents:
+                try:
+                    client.views_open(
+                        trigger_id=command["trigger_id"],
+                        view=_build_empty_modal(
+                            message=(
+                                "No agents in this workspace yet. An admin "
+                                "can add one in *<https://relayed.live/agents|"
+                                "Relay → Agents>*."
+                            ),
+                        ),
+                    )
+                except SlackApiError:
+                    log.exception("slack.views_open_failed", reason="no_agents")
+                return
+
+            try:
+                client.views_open(
+                    trigger_id=command["trigger_id"],
+                    view=_build_modal(
+                        agents=list(agents),
+                        channel_id=command["channel_id"],
+                        team_id=team_id,
+                    ),
+                )
+            except SlackApiError:
+                log.exception("slack.views_open_failed")
+
+    # Modal submission — fired when the user clicks "Send" in the picker.
+    # Bolt's @app.view auto-acks; we route as if the user had typed
+    # /relay <agent> <prompt> from the original channel.
+    @app.view(MODAL_CALLBACK_ID)
+    def on_modal_submit(ack, body, view, client):
+        ack()  # close the modal immediately; the routing post is async
+        try:
+            meta = json.loads(view.get("private_metadata") or "{}")
+        except json.JSONDecodeError:
+            log.warning("modal.bad_private_metadata")
+            return
+        team_id = meta.get("team_id") or body.get("team", {}).get("id")
+        channel_id = meta.get("channel_id")
+        if not team_id or not channel_id:
+            log.warning("modal.missing_routing_context")
+            return
+
+        values = view.get("state", {}).get("values", {}) or {}
+        agent_block = values.get(MODAL_AGENT_BLOCK, {})
+        prompt_block = values.get(MODAL_PROMPT_BLOCK, {})
+        selected = (
+            (agent_block.get(MODAL_AGENT_ACTION) or {}).get("selected_option")
+            or {}
+        )
+        slug = (selected.get("value") or "").strip()
+        prompt = (
+            (prompt_block.get(MODAL_PROMPT_ACTION) or {}).get("value") or ""
+        ).strip()
+
+        if not slug or not prompt:
+            log.warning("modal.empty_payload", slug_set=bool(slug), prompt_set=bool(prompt))
+            return
+
+        # Route as if the user had typed `/relay <slug> <prompt>`. The
+        # router resolves the explicit-slug branch and the rest of the
+        # placeholder/CMA/post pipeline runs identically.
         handle_message(
             client=client,
-            text=command.get("text", ""),
+            text=f"{slug} {prompt}",
             team_id=team_id,
-            channel_id=command["channel_id"],
-            slack_thread_ts=None,  # slash commands post top-level
+            channel_id=channel_id,
+            slack_thread_ts=None,
         )

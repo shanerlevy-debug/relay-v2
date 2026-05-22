@@ -1,8 +1,12 @@
 """Slug -> agent resolution + thread-pin upsert.
 
 Routing precedence:
-  1. Thread is already pinned to an active agent  -> use that agent
-  2. First whitespace-stripped word is a known active slug  -> use it
+  1. First whitespace-stripped word is a known active slug -> use it
+     ("explicit slug wins over the pin" — supports mid-thread agent
+     switching, e.g. typing `vanguard what about Q3?` in a thread Alfred
+     was already on. Result is treated as a fresh session under the new
+     agent and the pin updates accordingly.)
+  2. Thread is already pinned to an active agent  -> use that agent
   3. Workspace has a default agent  -> use the default
   4. Otherwise  -> no agent (bridge replies with help text)
 
@@ -65,7 +69,10 @@ def route_message(
     """
     cleaned = _MENTION_RE.sub("", text or "").strip()
 
-    # 1. Thread pin
+    # Look up the pin once, regardless of which branch wins. We need it
+    # below either to return as thread_pin, to attach to an explicit_slug
+    # switch (so the caller can detect this was a switch and clear the
+    # old session_id), or to drop if its agent is archived.
     pin = db.execute(
         select(SlackThread).where(
             SlackThread.workspace_id == workspace_id,
@@ -74,6 +81,41 @@ def route_message(
         )
     ).scalar_one_or_none()
 
+    # 1. Explicit slug as the first whitespace-delimited token. This wins
+    # over the thread pin so users can switch agents mid-conversation:
+    #   alfred:  "(reply in a thread alfred was pinned to)
+    #   user:    "vanguard what about Q3"  -> switches to vanguard
+    # The pin upsert at the end of the turn will overwrite the pinned
+    # agent_id + last_session_id with the new agent's.
+    parts = cleaned.split(None, 1)
+    if parts:
+        candidate_slug = parts[0].lower()
+        explicit = get_agent_by_slug(
+            db, workspace_id=workspace_id, slug=candidate_slug
+        )
+        if explicit is not None:
+            # If the explicit slug matches the already-pinned agent, treat
+            # this as a normal pinned-thread continuation so the existing
+            # CMA session is reused. (The slug prefix is conversational
+            # nicety, not an actual switch.)
+            if (
+                pin is not None
+                and pin.agent_id == explicit.id
+                and explicit.archived_at is None
+            ):
+                return RoutingResult(
+                    agent=explicit,
+                    prompt=parts[1] if len(parts) > 1 else "",
+                    reason="thread_pin",
+                    pinned_thread=pin,
+                )
+            return RoutingResult(
+                agent=explicit,
+                prompt=parts[1] if len(parts) > 1 else "",
+                reason="explicit_slug",
+            )
+
+    # 2. Thread pin (no explicit slug, or slug didn't match an active agent)
     if pin is not None:
         pinned_agent = get_agent_by_id(
             db, workspace_id=workspace_id, agent_id=pin.agent_id
@@ -89,20 +131,6 @@ def route_message(
         # The session_id is unreusable since its agent is gone.
         db.delete(pin)
         db.flush()
-
-    # 2. Explicit slug as the first whitespace-delimited token
-    parts = cleaned.split(None, 1)
-    if parts:
-        candidate_slug = parts[0].lower()
-        explicit = get_agent_by_slug(
-            db, workspace_id=workspace_id, slug=candidate_slug
-        )
-        if explicit is not None:
-            return RoutingResult(
-                agent=explicit,
-                prompt=parts[1] if len(parts) > 1 else "",
-                reason="explicit_slug",
-            )
 
     # 3. Default
     default_agent = find_default_agent(db, workspace_id=workspace_id)
