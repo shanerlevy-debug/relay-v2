@@ -17,14 +17,15 @@ none of which apply here. Relay's version is ~150 lines and covers:
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from relay_api.db.models import Workspace, WorkspaceSlackInstall
+from relay_api.db.models import User, Workspace, WorkspaceSlackInstall
 from relay_api.services.envelope import decrypt, encrypt
-from relay_api.services.oauth.slack import SlackInstallExchange
+from relay_api.services.oauth.slack import SlackInstallExchange, SlackUserInfo
 
 
 class SlackInstallError(Exception):
@@ -34,6 +35,16 @@ class SlackInstallError(Exception):
     def __init__(self, message: str, *, code: str = "invalid"):
         super().__init__(message)
         self.code = code
+
+
+@dataclass(frozen=True)
+class BootstrapResult:
+    """Output of bootstrap_from_slack_install(). The route uses these to set
+    the session cookie and pick the right redirect target."""
+
+    workspace: Workspace
+    user: User
+    install: WorkspaceSlackInstall
 
 
 def create_install(
@@ -111,6 +122,103 @@ def create_install(
 
     db.flush()
     return row
+
+
+def bootstrap_from_slack_install(
+    db: Session,
+    *,
+    exchange: SlackInstallExchange,
+    installer: SlackUserInfo,
+) -> BootstrapResult:
+    """Create a fresh Workspace + admin User + Slack install in one txn.
+
+    Used by the Add-to-Slack flow when an anonymous visitor finishes the
+    Slack OAuth handshake and we don't have a Relay session yet. The Slack
+    OAuth's `users:read.email` scope gives us an email Slack has verified;
+    we trust it the same way we'd trust a Google SSO email.
+
+    Caller commits. Raises SlackInstallError on:
+      team_already_connected   — this Slack workspace is already on another
+                                  Relay account (collision is at the install
+                                  step, not the user step, because the email
+                                  might also match an unrelated existing user)
+      email_in_use             — a Relay user already exists with this email.
+                                  Route layer maps this to a "please log in
+                                  first" redirect.
+    """
+    email = installer.email.strip().lower()
+    if not email:
+        raise SlackInstallError("installer email is required", code="invalid")
+
+    # Reject if an existing User has this email — we don't try to attach the
+    # install to a stranger's workspace. The route layer turns this into a
+    # "please log in first" redirect. The user can connect Slack from
+    # Settings once they're authenticated.
+    existing = db.execute(
+        select(User)
+        .where(func.lower(User.email) == email)
+        .where(User.deleted_at.is_(None))
+    ).scalar_one_or_none()
+    if existing is not None:
+        raise SlackInstallError(
+            "an account already exists for this email — log in first",
+            code="email_in_use",
+        )
+
+    # Cross-tenant guard: same Slack team can't be installed twice.
+    other = db.execute(
+        select(WorkspaceSlackInstall)
+        .where(WorkspaceSlackInstall.slack_team_id == exchange.team_id)
+        .where(WorkspaceSlackInstall.revoked_at.is_(None))
+    ).scalar_one_or_none()
+    if other is not None:
+        raise SlackInstallError(
+            "This Slack workspace is already connected to a Relay account.",
+            code="team_already_connected",
+        )
+
+    # 1. Create the workspace, named after the Slack team.
+    workspace = Workspace(
+        display_name=exchange.team_name,
+        slack_team_id=exchange.team_id,
+    )
+    db.add(workspace)
+    db.flush()
+
+    # 2. Create the admin user. No password — they sign in via the Slack
+    # install link until we ship "set a password" + "forgot password" flows.
+    user = User(
+        workspace_id=workspace.id,
+        email=email,
+        password_hash=None,
+        email_verified_at=func.now(),
+        slack_user_id=installer.user_id,
+        role="admin",
+    )
+    db.add(user)
+    db.flush()
+
+    # 3. Persist the install (encrypted bot token, AAD-bound to install id).
+    install_id = uuid.uuid4()
+    nonce, ct = encrypt(exchange.bot_token, aad=install_id.bytes)
+    install = WorkspaceSlackInstall(
+        id=install_id,
+        workspace_id=workspace.id,
+        slack_team_id=exchange.team_id,
+        slack_team_name=exchange.team_name,
+        bot_user_id=exchange.bot_user_id,
+        app_id=exchange.app_id,
+        enterprise_id=exchange.enterprise_id,
+        enterprise_name=exchange.enterprise_name,
+        bot_token_nonce=nonce,
+        bot_token_ct=ct,
+        scopes_granted=exchange.bot_scopes_granted,
+        installed_by_user_id=user.id,
+    )
+    db.add(install)
+    db.flush()
+
+    return BootstrapResult(workspace=workspace, user=user, install=install)
 
 
 def get_active_install(

@@ -239,6 +239,39 @@ export async function archiveAgent(id: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// CMA discovery — browse-and-pick Add Agent
+// ---------------------------------------------------------------------------
+
+export interface CmaAgentSummary {
+  id: string;
+  model: string | null;
+  system: string | null;
+  archived_at: string | null;
+}
+
+export interface CmaEnvironmentSummary {
+  id: string;
+  name: string | null;
+  networking_type: string | null;
+}
+
+export interface CmaAgentsList {
+  agents: CmaAgentSummary[];
+}
+
+export interface CmaEnvironmentsList {
+  environments: CmaEnvironmentSummary[];
+}
+
+export async function listCmaAgents(): Promise<CmaAgentsList> {
+  return apiFetch<CmaAgentsList>("/api/cma/agents");
+}
+
+export async function listCmaEnvironments(): Promise<CmaEnvironmentsList> {
+  return apiFetch<CmaEnvironmentsList>("/api/cma/environments");
+}
+
+// ---------------------------------------------------------------------------
 // Users + invites
 // ---------------------------------------------------------------------------
 

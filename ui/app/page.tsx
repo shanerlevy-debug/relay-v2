@@ -1,12 +1,13 @@
 import Link from "next/link";
 
+import { AddToSlackButton } from "@/components/AddToSlackButton";
 import { HeroFlow } from "@/components/HeroFlow";
-import { InAction } from "@/components/landing/InAction";
 import { CTA } from "@/components/landing/CTA";
 import { Commands } from "@/components/landing/Commands";
 import { Features } from "@/components/landing/Features";
 import { Footer } from "@/components/landing/Footer";
 import { HowItWorks } from "@/components/landing/HowItWorks";
+import { InAction } from "@/components/landing/InAction";
 import { PowerloomCallout } from "@/components/landing/PowerloomCallout";
 import { RelayMark } from "@/components/RelayMark";
 
@@ -147,7 +148,8 @@ function Hero() {
             Slack and Claude managed agents. Bring your own Anthropic key.
           </p>
 
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 48 }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
+            <AddToSlackButton variant="dark" size="lg" />
             <Link href="/signup" className="rl-btn rl-btn-primary rl-btn-lg">
               Start free in 2 minutes
             </Link>
@@ -165,6 +167,16 @@ function Hero() {
               Sign in →
             </Link>
           </div>
+          <p
+            style={{
+              fontSize: 12,
+              color: "rgb(var(--ink-300))",
+              margin: "0 0 48px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            One click. We create the workspace from your Slack team.
+          </p>
 
           <div
             style={{

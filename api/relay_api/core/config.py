@@ -61,10 +61,23 @@ class Settings(BaseSettings):
     # encrypted into workspace_slack_installs after `oauth.v2.access`.
     OAUTH_SLACK_CLIENT_ID: str | None = None
     OAUTH_SLACK_CLIENT_SECRET: str | None = None
+    # Note: users:read + users:read.email are required for the "Add to Slack"
+    # bootstrap flow (anonymous install → look up installer's email via
+    # users.info → create a Relay workspace). Existing in-product "Connect
+    # Slack" doesn't strictly need them but harmless to grant.
     OAUTH_SLACK_BOT_SCOPES: str = (
         "app_mentions:read chat:write chat:write.public "
-        "channels:history im:history im:write commands"
+        "channels:history im:history im:write commands "
+        "users:read users:read.email team:read"
     )
+
+    # ---- Google OAuth (login + signup) ----
+    # OAuth 2.0 Web Application client from console.cloud.google.com.
+    # Redirect URI must be set to {RELAY_API_PUBLIC_URL}/api/oauth/google/callback.
+    # Empty = "Continue with Google" buttons render but the /start route
+    # returns 500 misconfigured.
+    OAUTH_GOOGLE_CLIENT_ID: str | None = None
+    OAUTH_GOOGLE_CLIENT_SECRET: str | None = None
 
     # ---- Transactional email ----
     # "console" prints to stdout (dev). "ses" calls AWS SES (prod, once
