@@ -8,9 +8,10 @@ export function Footer() {
     {
       title: "Product",
       links: [
-        { label: "How it works", href: "#how" },
-        { label: "Features", href: "#features" },
-        { label: "Commands", href: "#commands" },
+        { label: "How it works", href: "/#how" },
+        { label: "Features", href: "/#features" },
+        { label: "Commands", href: "/#commands" },
+        { label: "Pricing", href: "/pricing" },
       ],
     },
     {

@@ -62,6 +62,9 @@ function LandingNav() {
           <a href="#commands" className="rl-topnav-link">
             Commands
           </a>
+          <Link href="/pricing" className="rl-topnav-link">
+            Pricing
+          </Link>
         </nav>
         <span
           className="rl-topnav-divider"
