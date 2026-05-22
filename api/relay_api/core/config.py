@@ -66,6 +66,14 @@ class Settings(BaseSettings):
         "channels:history im:history im:write commands"
     )
 
+    # ---- Google OAuth (login + signup) ----
+    # OAuth 2.0 Web Application client from console.cloud.google.com.
+    # Redirect URI must be set to {RELAY_API_PUBLIC_URL}/api/oauth/google/callback.
+    # Empty = "Continue with Google" buttons render but the /start route
+    # returns 500 misconfigured.
+    OAUTH_GOOGLE_CLIENT_ID: str | None = None
+    OAUTH_GOOGLE_CLIENT_SECRET: str | None = None
+
     # ---- Transactional email ----
     # "console" prints to stdout (dev). "ses" calls AWS SES (prod, once
     # the relayed.live domain is DNS-verified).

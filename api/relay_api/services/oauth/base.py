@@ -12,6 +12,9 @@ install and who's recording the install.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
+import secrets as _py_secrets
 from dataclasses import dataclass
 from typing import Any
 
@@ -57,3 +60,15 @@ def deserialize_state(token: str) -> dict[str, Any]:
         return _STATE_SERIALIZER.loads(token)
     except BadSignature as e:
         raise OAuthError("invalid OAuth state cookie", code="bad_state") from e
+
+
+def generate_pkce_pair() -> tuple[str, str]:
+    """Return (verifier, S256 challenge) for an OAuth PKCE handshake.
+
+    RFC 7636 §4.1: verifier is 43–128 chars of unreserved URL-safe characters.
+    Challenge = base64-url(sha256(verifier)) with padding stripped.
+    """
+    verifier = _py_secrets.token_urlsafe(64)[:128]
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    challenge = base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
+    return verifier, challenge

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { RelayMark } from "@/components/RelayMark";
 import { ApiError, login } from "@/lib/api";
 
@@ -85,6 +86,27 @@ export default function LoginPage() {
         >
           Welcome back
         </h1>
+
+        <div style={{ marginBottom: 16 }}>
+          <GoogleSignInButton />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            margin: "20px 0",
+            color: "var(--color-fg3)",
+            fontSize: 11,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
+        >
+          <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
+          <span>or</span>
+          <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
+        </div>
 
         <div style={{ marginBottom: 16 }}>
           <label

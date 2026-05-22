@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { RelayMark } from "@/components/RelayMark";
 import { ApiError, signup } from "@/lib/api";
 
@@ -118,6 +119,27 @@ export default function SignupPage() {
         >
           Free up to 25 users and 25 agents. BYO Anthropic key.
         </p>
+
+        <div style={{ marginBottom: 16 }}>
+          <GoogleSignInButton label="Sign up with Google" />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            margin: "20px 0",
+            color: "var(--color-fg3)",
+            fontSize: 11,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
+        >
+          <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
+          <span>or with email</span>
+          <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
+        </div>
 
         <Field label="Workspace name" htmlFor="ws_name" error={errorField === "workspace_name" ? error : null}>
           <input
