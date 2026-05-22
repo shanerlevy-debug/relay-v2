@@ -4,10 +4,31 @@ import { RelayWordmark } from "@/components/RelayMark";
  * Landing-page footer. Dark, lifted from mockup with Relay's link set.
  */
 export function Footer() {
-  const cols: Array<{ title: string; links: string[] }> = [
-    { title: "Product", links: ["How it works", "Features", "Commands"] },
-    { title: "Resources", links: ["Docs", "Quickstart", "Status"] },
-    { title: "Company", links: ["Powerloom", "Privacy", "Contact"] },
+  const cols: Array<{ title: string; links: Array<{ label: string; href: string }> }> = [
+    {
+      title: "Product",
+      links: [
+        { label: "How it works", href: "#how" },
+        { label: "Features", href: "#features" },
+        { label: "Commands", href: "#commands" },
+      ],
+    },
+    {
+      title: "Resources",
+      links: [
+        { label: "Docs", href: "#" },
+        { label: "Quickstart", href: "#" },
+        { label: "Status", href: "#" },
+      ],
+    },
+    {
+      title: "Company",
+      links: [
+        { label: "Powerloom", href: "https://powerloom.dev" },
+        { label: "Privacy", href: "#" },
+        { label: "Contact", href: "#" },
+      ],
+    },
   ];
 
   return (
@@ -19,12 +40,10 @@ export function Footer() {
       }}
     >
       <div
+        className="rl-footer-grid"
         style={{
           maxWidth: "var(--content-max-w)",
           margin: "0 auto",
-          display: "grid",
-          gridTemplateColumns: "1.5fr 1fr 1fr 1fr",
-          gap: 48,
         }}
       >
         <div>
@@ -58,9 +77,13 @@ export function Footer() {
             </h5>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {col.links.map((l) => (
-                <li key={l} style={{ padding: "6px 0", fontSize: 13 }}>
-                  <a href="#" style={{ color: "rgb(var(--ink-100))" }}>
-                    {l}
+                <li key={l.label} style={{ padding: "6px 0", fontSize: 13 }}>
+                  <a
+                    href={l.href}
+                    className="rl-footer-link"
+                    style={{ color: "rgb(var(--ink-100))" }}
+                  >
+                    {l.label}
                   </a>
                 </li>
               ))}

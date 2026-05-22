@@ -65,15 +65,7 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
   return (
     <>
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          marginBottom: 24,
-          gap: 16,
-        }}
-      >
+      <div className="rl-page-header">
         <div>
           <h1
             style={{
@@ -96,7 +88,7 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
             Set one as the default for untagged messages.
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="rl-page-header-actions">
           <span
             style={{
               fontFamily: "var(--font-mono)",
@@ -187,28 +179,14 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
         </Card>
       ) : (
         /* Table */
-        <div
-          style={{
-            background: "var(--color-surface-2)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-lg)",
-            overflow: "hidden",
-          }}
-        >
+        <div className="rl-table rl-table-stack-on-mobile">
           {/* Header row */}
           <div
+            className="rl-table-head"
             style={{
               display: "grid",
               gridTemplateColumns: "1.2fr 2fr 100px 150px",
               alignItems: "center",
-              padding: "10px 16px",
-              fontSize: 11,
-              fontFamily: "var(--font-mono)",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              color: "var(--color-fg3)",
-              background: "var(--color-surface-3)",
-              borderBottom: "1px solid var(--color-border)",
             }}
           >
             <div>Slug</div>
@@ -217,12 +195,11 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
             <div />
           </div>
 
-          {data.agents.map((agent, idx) => (
+          {data.agents.map((agent) => (
             <AgentRow
               key={agent.id}
               agent={agent}
               isAdmin={isAdmin}
-              first={idx === 0}
               onEdit={() => setEditing(agent)}
               onArchive={() => onArchive(agent)}
             />
@@ -261,25 +238,21 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
 function AgentRow({
   agent,
   isAdmin,
-  first,
   onEdit,
   onArchive,
 }: {
   agent: AgentOut;
   isAdmin: boolean;
-  first: boolean;
   onEdit: () => void;
   onArchive: () => void;
 }) {
   return (
     <div
+      className="rl-table-row"
       style={{
         display: "grid",
         gridTemplateColumns: "1.2fr 2fr 100px 150px",
         alignItems: "center",
-        padding: "14px 16px",
-        fontSize: 13,
-        borderTop: first ? "none" : "1px solid var(--color-border-subtle)",
       }}
     >
       <div>

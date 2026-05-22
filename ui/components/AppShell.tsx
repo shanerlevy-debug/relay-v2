@@ -4,13 +4,15 @@ import {
   Bot,
   LayoutDashboard,
   LogOut,
+  Menu,
   ScrollText,
   Settings,
   UsersRound,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 import { RelayMark } from "@/components/RelayMark";
 import { logout, SessionOut } from "@/lib/api";
@@ -22,6 +24,9 @@ import { logout, SessionOut } from "@/lib/api";
  *
  * Hides admin-only nav items from non-admin users (Users + Settings).
  * Audit is read-only for everyone.
+ *
+ * On screens ≤ 720px the sidebar becomes a drawer behind a top-bar
+ * hamburger; the same component renders both states via CSS.
  */
 
 const NAV: Array<{
@@ -48,8 +53,14 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const isAdmin = session.user.role === "admin";
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const visibleNav = NAV.filter((item) => !item.adminOnly || isAdmin);
+
+  // Close the drawer on route change.
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
 
   async function onLogout() {
     try {
@@ -64,63 +75,93 @@ export function AppShell({
 
   return (
     <div
+      className="rl-shell"
       style={{
-        display: "flex",
-        minHeight: "100vh",
         background: "var(--color-surface)",
         color: "var(--color-fg1)",
       }}
     >
-      <aside
-        style={{
-          width: "var(--sidebar-w)",
-          flexShrink: 0,
-          borderRight: "1px solid var(--color-border)",
-          background: "var(--color-surface-2)",
-          padding: "16px 14px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 18,
-          minHeight: "100vh",
-          position: "sticky",
-          top: 0,
-        }}
-      >
-        {/* Brand */}
-        <Link
-          href="/home"
+      {/* Mobile top bar — only visible below the breakpoint */}
+      <div className="rl-shell-mobile-bar">
+        <Link href="/home" className="rl-shell-mobile-bar-brand">
+          <RelayMark size={26} />
+          <span style={{ fontWeight: 600, fontSize: 15, letterSpacing: "-0.01em" }}>
+            Relay
+          </span>
+        </Link>
+        <button
+          type="button"
+          aria-label="Open navigation"
+          onClick={() => setDrawerOpen(true)}
+          className="rl-shell-mobile-bar-button"
+        >
+          <Menu size={18} />
+        </button>
+      </div>
+
+      {/* Scrim — covers the main pane when drawer is open on mobile */}
+      <div
+        className="rl-shell-scrim"
+        data-open={drawerOpen ? "true" : "false"}
+        onClick={() => setDrawerOpen(false)}
+      />
+
+      <aside className="rl-shell-sidebar" data-open={drawerOpen ? "true" : "false"}>
+        {/* Brand + close (close is only visible on mobile via the bar layout) */}
+        <div
           style={{
             display: "flex",
             alignItems: "center",
+            justifyContent: "space-between",
             gap: 10,
-            padding: "4px 6px",
-            borderRadius: 6,
           }}
         >
-          <RelayMark size={30} />
-          <div>
-            <div
-              style={{
-                fontSize: 15,
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                color: "var(--color-fg1)",
-              }}
-            >
-              Relay
+          <Link
+            href="/home"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "4px 6px",
+              borderRadius: 6,
+              textDecoration: "none",
+              color: "inherit",
+            }}
+          >
+            <RelayMark size={30} />
+            <div>
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  letterSpacing: "-0.01em",
+                  color: "var(--color-fg1)",
+                }}
+              >
+                Relay
+              </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--color-fg3)",
+                  marginTop: 1,
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                console
+              </div>
             </div>
-            <div
-              style={{
-                fontSize: 11,
-                color: "var(--color-fg3)",
-                marginTop: 1,
-                fontFamily: "var(--font-mono)",
-              }}
-            >
-              console
-            </div>
-          </div>
-        </Link>
+          </Link>
+          <button
+            type="button"
+            aria-label="Close navigation"
+            onClick={() => setDrawerOpen(false)}
+            className="rl-shell-mobile-bar-button"
+            style={{ display: drawerOpen ? "flex" : "none" }}
+          >
+            <X size={16} />
+          </button>
+        </div>
 
         {/* Workspace pill */}
         <div
@@ -252,45 +293,14 @@ export function AppShell({
             </div>
           </div>
 
-          <button
-            onClick={onLogout}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              justifyContent: "flex-start",
-              background: "transparent",
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-sm)",
-              padding: "6px 10px",
-              fontSize: 12,
-              color: "var(--color-fg2)",
-              fontFamily: "inherit",
-              cursor: "pointer",
-              transition: "background 120ms var(--ease-std)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--color-surface-3)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
+          <button onClick={onLogout} className="rl-shell-logout">
             <LogOut size={14} />
             Log out
           </button>
         </div>
       </aside>
 
-      <main
-        style={{
-          flex: 1,
-          minWidth: 0,
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      <main className="rl-shell-main">
         <div
           style={{
             maxWidth: 1240,

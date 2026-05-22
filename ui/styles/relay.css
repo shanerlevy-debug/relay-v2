@@ -22,8 +22,9 @@
   --slack-blue:      #36C5F0;
   --slack-red:       #E01E5A;
 
-  /* Fraunces — for editorial italic accents on the landing page */
-  --font-serif: "Fraunces", "Times New Roman", serif;
+  /* Fraunces — for editorial italic accents on the landing page.
+   * `--font-serif-loaded` comes from next/font; static fallbacks behind it. */
+  --font-serif: var(--font-serif-loaded), "Fraunces", "Times New Roman", serif;
 }
 
 /* ---------- Replace Powerloom accent with Relay coral ---------- */
@@ -304,4 +305,495 @@ button { font-family: inherit; }
 @keyframes rl-event-enter {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+ * Landing page — responsive grids
+ *
+ * The landing components used to set `gridTemplateColumns` inline, which
+ * meant nothing collapsed below 1240px. These classes own the column
+ * shape so we can add media queries.
+ * ========================================================================== */
+
+.rl-hero-inner {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.rl-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px;
+}
+
+.rl-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+}
+
+.rl-commands-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.rl-callout-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 48px;
+  align-items: center;
+}
+
+.rl-footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+
+.rl-inaction-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 56px;
+  align-items: center;
+}
+
+/* Tablet — collapse 3-col grids to 2-col, 2-col grids to single column. */
+@media (max-width: 960px) {
+  .rl-hero-inner { grid-template-columns: 1fr; gap: 40px; }
+  .rl-grid-3 { grid-template-columns: 1fr 1fr; }
+  .rl-features-grid { grid-template-columns: repeat(2, 1fr); }
+  .rl-commands-grid { grid-template-columns: 1fr; gap: 32px; }
+  .rl-callout-grid { grid-template-columns: 1fr; gap: 24px; }
+  .rl-inaction-grid { grid-template-columns: 1fr; gap: 32px; }
+  .rl-footer-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Phone — single column everywhere; pull section padding tighter. */
+@media (max-width: 640px) {
+  .rl-section { padding: 64px 20px; }
+  .rl-grid-3 { grid-template-columns: 1fr; gap: 24px; }
+  .rl-features-grid { grid-template-columns: 1fr; }
+  .rl-footer-grid { grid-template-columns: 1fr; gap: 32px; }
+}
+
+/* ---------- Landing topnav — link visibility + hover ---------- */
+.rl-topnav-link {
+  color: rgb(var(--ink-100));
+  transition: color var(--duration-1) var(--ease-std);
+}
+.rl-topnav-link:hover { color: rgb(var(--paper-50)); }
+
+@media (max-width: 860px) {
+  .rl-topnav-tag,
+  .rl-topnav-links,
+  .rl-topnav-divider,
+  .rl-topnav-signin { display: none; }
+  .rl-topnav-inner { gap: 16px; }
+}
+
+/* ---------- Landing footer — link hover ---------- */
+.rl-footer-link {
+  transition: color var(--duration-1) var(--ease-std);
+}
+.rl-footer-link:hover { color: rgb(var(--paper-50)); }
+
+/* ---------- Powerloom callout CTA — hover ---------- */
+.rl-callout-cta {
+  transition: background var(--duration-1) var(--ease-std);
+}
+.rl-callout-cta:hover { background: rgb(var(--thread-700)); }
+
+/* ==========================================================================
+ * Console shell helpers
+ * ========================================================================== */
+
+.rl-shell-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--color-fg2);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--duration-1) var(--ease-std),
+              color var(--duration-1) var(--ease-std);
+}
+.rl-shell-logout:hover {
+  background: var(--color-surface-3);
+  color: var(--color-fg1);
+}
+
+/* Console-side card grids — 2-col → 1-col under 720px. */
+.rl-home-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 720px) {
+  .rl-home-cards { grid-template-columns: 1fr; }
+}
+
+/* Console page headers — title + actions. Below 640px, wrap actions
+ * underneath instead of crushing the right side into one column. */
+.rl-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.rl-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .rl-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rl-page-header-actions {
+    justify-content: space-between;
+  }
+}
+
+/* Console data tables — agents, users, audit. They share grid columns
+ * and the same desktop/mobile fall-through behavior. */
+.rl-table {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.rl-table-head {
+  padding: 10px 16px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-fg3);
+  background: var(--color-surface-3);
+  border-bottom: 1px solid var(--color-border);
+}
+.rl-table-row {
+  padding: 14px 16px;
+  font-size: 13px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+.rl-table-row:first-child { border-top: none; }
+.rl-table-row-hoverable {
+  cursor: pointer;
+  transition: background var(--duration-1) var(--ease-std);
+}
+.rl-table-row-hoverable:hover { background: var(--color-surface-3); }
+
+/* When a table needs to drop its grid header on mobile and re-stack
+ * rows vertically, parents add .rl-table-stack-on-mobile. The grids
+ * inside become flex-column-stacks under 640px. */
+@media (max-width: 640px) {
+  .rl-table-stack-on-mobile .rl-table-head { display: none; }
+  .rl-table-stack-on-mobile .rl-table-row {
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 14px 14px;
+  }
+  /* Cells render as labeled rows via data-label */
+  .rl-table-stack-on-mobile .rl-table-row > * {
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+}
+
+/* ==========================================================================
+ * Console mobile shell — sidebar collapses to a top bar with a drawer.
+ * ========================================================================== */
+
+.rl-shell {
+  display: flex;
+  min-height: 100vh;
+}
+.rl-shell-sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+}
+.rl-shell-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.rl-shell-mobile-bar { display: none; }
+.rl-shell-scrim { display: none; }
+
+@media (max-width: 720px) {
+  /* Hide the desktop sidebar; show the mobile top bar + drawer. */
+  .rl-shell-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 40;
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform var(--duration-2) var(--ease-std);
+    box-shadow: 8px 0 24px rgb(0 0 0 / 0.2);
+  }
+  .rl-shell-sidebar[data-open="true"] { transform: translateX(0); }
+
+  .rl-shell-mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .rl-shell-mobile-bar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .rl-shell-mobile-bar-button {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-fg1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .rl-shell-mobile-bar-button:hover { background: var(--color-surface-3); }
+
+  .rl-shell-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / 0.4);
+    z-index: 30;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-2) var(--ease-std);
+  }
+  .rl-shell-scrim[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* ==========================================================================
+ * Hero animation (HeroFlow) — setup-then-use in one Slack-style window.
+ *
+ * Two views (setup, use) share the same window frame. They cross-fade
+ * with a small translate. Inside each view, individual rows / messages
+ * tick in via opacity + translateY.
+ * ========================================================================== */
+
+.rl-hero-flow {
+  position: relative;
+  background: rgb(var(--paper-100));
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.4),
+    0 8px 16px rgba(0,0,0,0.3);
+  overflow: hidden;
+  min-height: 460px;
+}
+
+.rl-hero-flow-chrome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #E8E5DD;
+  border-bottom: 1px solid #D4D1C8;
+}
+.rl-hero-flow-traffic {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rl-hero-flow-title {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #4A515C;
+  transition: color 320ms var(--ease-std);
+}
+
+/* Body holds both views stacked; we opacity-swap between them. */
+.rl-hero-flow-body {
+  position: relative;
+  background: #FFFFFF;
+  min-height: 410px;
+}
+.rl-hero-flow-view {
+  position: absolute;
+  inset: 0;
+  padding: 22px 22px 18px;
+  transition:
+    opacity 460ms var(--ease-std),
+    transform 460ms var(--ease-std);
+}
+
+/* ─── Setup view ─── */
+
+.rl-hero-flow-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rl-hero-flow-setup-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #838A95;
+  margin-bottom: 4px;
+}
+.rl-hero-flow-row {
+  display: grid;
+  grid-template-columns: 28px 32px 1fr 20px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border: 1px solid #E8E5DD;
+  border-radius: 8px;
+  transition: opacity 360ms var(--ease-std), transform 360ms var(--ease-std);
+}
+.rl-hero-flow-row-n {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #838A95;
+  letter-spacing: 0.04em;
+}
+.rl-hero-flow-row-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rl-hero-flow-row-text {
+  min-width: 0;
+}
+.rl-hero-flow-row-check {
+  display: flex;
+  justify-content: flex-end;
+}
+.rl-hero-flow-connected {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgb(var(--relay-500) / 0.08);
+  color: rgb(var(--relay-700));
+  font-size: 12px;
+  font-weight: 500;
+  align-self: flex-start;
+  transition: opacity 360ms var(--ease-std), transform 360ms var(--ease-std);
+}
+.rl-hero-flow-connected .mono {
+  background: rgb(var(--relay-500) / 0.12);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11.5px;
+}
+
+/* ─── Use view ─── */
+
+.rl-hero-flow-use {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 0;
+}
+.rl-hero-flow-msg {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  padding: 6px 0;
+  animation: rl-event-enter 280ms var(--ease-std);
+}
+.rl-hero-flow-msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rl-hero-flow-cmd {
+  background: rgb(var(--relay-500) / 0.12);
+  color: rgb(var(--relay-700));
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+.rl-hero-flow-code {
+  font-family: var(--font-mono);
+  background: #F1EFE9;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 12.5px;
+}
+.rl-hero-flow-processing {
+  margin: 4px 0;
+  padding: 10px 12px;
+  background: rgb(var(--relay-500) / 0.06);
+  border: 1px solid rgb(var(--relay-500) / 0.18);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: rl-event-enter 280ms var(--ease-std);
+}
+
+/* Phone: hero animation gets a touch shorter so it doesn't dominate. */
+@media (max-width: 640px) {
+  .rl-hero-flow { min-height: 400px; }
+  .rl-hero-flow-body { min-height: 360px; }
+  .rl-hero-flow-view { padding: 16px 14px; }
+  .rl-hero-flow-row { padding: 10px 12px; grid-template-columns: 24px 28px 1fr 18px; gap: 10px; }
 }

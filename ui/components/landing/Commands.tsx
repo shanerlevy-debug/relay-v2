@@ -16,14 +16,8 @@ export function Commands() {
   return (
     <section id="commands" className="rl-section" style={{ background: "var(--color-surface)" }}>
       <div className="rl-section-inner">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1.2fr",
-            gap: 56,
-            alignItems: "center",
-          }}
-        >
+        <div className="rl-commands-grid">
+
           <div>
             <div className="rl-eyebrow">Commands</div>
             <h2 className="rl-h2" style={{ marginTop: 14, marginBottom: 20, fontSize: 40 }}>
@@ -37,7 +31,7 @@ export function Commands() {
                 marginBottom: 24,
               }}
             >
-              Four ways to invoke. Pick the one that fits your team&apos;s muscle memory.
+              Four ways to summon a relay. Pick the one that fits your team&apos;s muscle memory.
             </p>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {rows.map(([k, v]) => (

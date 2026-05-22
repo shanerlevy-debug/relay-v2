@@ -17,15 +17,7 @@ export function PowerloomCallout() {
         borderBottom: "none",
       }}
     >
-      <div
-        className="rl-section-inner"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto",
-          gap: 48,
-          alignItems: "center",
-        }}
-      >
+      <div className="rl-section-inner rl-callout-grid">
         <div>
           <div
             style={{
@@ -49,7 +41,16 @@ export function PowerloomCallout() {
               maxWidth: 720,
             }}
           >
-            Outgrown the pop-up?
+            Relay is the bridge.{" "}
+            <em
+              style={{
+                fontFamily: "var(--font-serif)",
+                fontStyle: "italic",
+                fontWeight: 500,
+              }}
+            >
+              Powerloom is the platform.
+            </em>
           </h2>
           <p
             style={{
@@ -60,14 +61,15 @@ export function PowerloomCallout() {
               maxWidth: 640,
             }}
           >
-            Powerloom is the kitchen. SSO, multi-workspace orgs, per-channel
-            RBAC, approval flows, audit-chain integrity, memory stack, MCP
-            fleet, SOC2-ready audit retention. Same team, same conventions,
-            no lock-in either way.
+            When 25 agents and 25 users isn&apos;t enough: SSO, multi-workspace
+            orgs, per-channel RBAC, approval flows, audit-chain integrity, a
+            memory stack, an MCP fleet, SOC2-ready audit retention. Same team,
+            same conventions, no re-platforming.
           </p>
         </div>
         <a
           href="https://powerloom.dev"
+          className="rl-callout-cta"
           style={{
             padding: "14px 22px",
             background: "rgb(var(--thread-500))",

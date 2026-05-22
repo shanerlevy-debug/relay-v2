@@ -31,9 +31,9 @@ export function CTA() {
             marginBottom: 32,
           }}
         >
-          Sign up, install Relay in your Slack workspace, paste your Anthropic key,
-          and the next time someone needs an answer in #help they&apos;ll have one
-          before they finish typing the question.
+          Sign up, paste your Anthropic key, install Relay in Slack. Next time
+          someone asks in #help, they&apos;ll have the answer before they finish
+          typing the question.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <AddToSlackButton size="lg" />

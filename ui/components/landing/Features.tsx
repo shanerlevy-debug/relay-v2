@@ -20,32 +20,32 @@ const features: Array<{
   {
     Icon: KeyRound,
     title: "Bring your own Anthropic key",
-    body: "You pay Anthropic directly. We just route the messages. AES-256-GCM-enveloped at rest, decrypted just-in-time.",
+    body: "You pay Anthropic directly — we just route. Keys are AES-256-GCM-enveloped at rest, decrypted only when a message routes.",
   },
   {
     Icon: ShieldCheck,
     title: "Slack-native auth",
-    body: "OAuth per workspace, every install is signed by Slack. No shared bot tokens, no secrets in env vars.",
+    body: "Every install is a real Slack OAuth — workspace-scoped, signed by Slack. No shared bot tokens, no secrets baked into env.",
   },
   {
     Icon: Shuffle,
     title: "Slug-based agent routing",
-    body: "Address agents by name: @relay vanguard ... or /relay alfred ... Thread continuity keeps follow-ups with the same agent.",
+    body: "Address agents by name — @relay vanguard or /relay alfred. Thread context keeps follow-ups with the same agent.",
   },
   {
     Icon: Sparkles,
     title: "Up to 25 agents per workspace",
-    body: "Mix Sonnet, Opus, Haiku — your call. Each gets its own slug, system prompt, and environment.",
+    body: "Mix Sonnet, Opus, Haiku — your call. Each agent has its own slug, system prompt, and env.",
   },
   {
     Icon: ScrollText,
     title: "Audit log built in",
-    body: "Every routed message lands as a row: who, when, which agent, which channel, which CMA session. Searchable.",
+    body: "Every routed message becomes a row — who, when, which agent, which channel, which Claude session. Searchable from day one.",
   },
   {
     Icon: UsersRound,
     title: "Up to 25 users",
-    body: "Email invite flow, admin + member roles. When you outgrow it, the Enterprise upsell sits right next to the limit.",
+    body: "Email invites, admin + member roles. When you outgrow it, Powerloom is right next door — same team, no re-platforming.",
   },
 ];
 
@@ -63,10 +63,8 @@ export function Features() {
         </h2>
 
         <div
+          className="rl-features-grid"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 1,
             background: "var(--color-border)",
             border: "1px solid var(--color-border)",
             borderRadius: 8,

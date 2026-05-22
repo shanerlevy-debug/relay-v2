@@ -1,12 +1,13 @@
 import Link from "next/link";
 
 import { AddToSlackButton } from "@/components/AddToSlackButton";
-import { HeroSlackPreview } from "@/components/HeroSlackPreview";
+import { HeroFlow } from "@/components/HeroFlow";
 import { CTA } from "@/components/landing/CTA";
 import { Commands } from "@/components/landing/Commands";
 import { Features } from "@/components/landing/Features";
 import { Footer } from "@/components/landing/Footer";
 import { HowItWorks } from "@/components/landing/HowItWorks";
+import { InAction } from "@/components/landing/InAction";
 import { PowerloomCallout } from "@/components/landing/PowerloomCallout";
 import { RelayMark } from "@/components/RelayMark";
 
@@ -22,7 +23,7 @@ function LandingNav() {
   return (
     <header className="rl-topnav">
       <div className="rl-topnav-inner">
-        <a href="#" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <RelayMark size={28} />
           <span
             style={{
@@ -34,8 +35,9 @@ function LandingNav() {
           >
             Relay
           </span>
-        </a>
+        </Link>
         <span
+          className="rl-topnav-tag"
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: 10.5,
@@ -50,18 +52,24 @@ function LandingNav() {
           Slack ↔ Claude
         </span>
         <div style={{ flex: 1 }} />
-        <nav style={{ display: "flex", gap: 24, fontSize: 13 }}>
-          <a href="#how" style={{ color: "rgb(var(--ink-100))" }}>
+        <nav className="rl-topnav-links" style={{ display: "flex", gap: 24, fontSize: 13 }}>
+          <a href="#how" className="rl-topnav-link">
             How it works
           </a>
-          <a href="#features" style={{ color: "rgb(var(--ink-100))" }}>
+          <a href="#features" className="rl-topnav-link">
             Features
           </a>
+          <a href="#commands" className="rl-topnav-link">
+            Commands
+          </a>
         </nav>
-        <span style={{ width: 1, height: 18, background: "rgb(255 255 255 / 0.1)" }} />
+        <span
+          className="rl-topnav-divider"
+          style={{ width: 1, height: 18, background: "rgb(255 255 255 / 0.1)" }}
+        />
         <Link
           href="/login"
-          className="rl-btn"
+          className="rl-btn rl-topnav-signin"
           style={{
             background: "transparent",
             color: "rgb(var(--paper-50))",
@@ -82,15 +90,12 @@ function Hero() {
   return (
     <section className="rl-hero">
       <div
+        className="rl-hero-inner"
         style={{
           maxWidth: "var(--content-max-w)",
           margin: "0 auto",
           padding: "80px 32px 96px",
           position: "relative",
-          display: "grid",
-          gridTemplateColumns: "1.1fr 1fr",
-          gap: 56,
-          alignItems: "center",
         }}
       >
         <div>
@@ -119,11 +124,11 @@ function Hero() {
                 boxShadow: "0 0 10px rgb(var(--relay-300))",
               }}
             />
-            By the Powerloom team · private beta
+            From the Powerloom team · private beta
           </div>
 
           <h1 className="rl-display-xl" style={{ color: "rgb(var(--paper-50))", maxWidth: 720 }}>
-            Run your Claude agents <em>from Slack.</em>
+            Your Claude agents, <em>one mention away.</em>
           </h1>
 
           <p
@@ -135,18 +140,18 @@ function Hero() {
               margin: "28px 0 36px",
             }}
           >
-            Relay is the thin bridge between Slack and Claude managed agents.
             Mention{" "}
             <span className="mono" style={{ color: "rgb(var(--relay-300))" }}>
               @relay
             </span>{" "}
-            in any channel, get an answer in the thread. Bring your own Anthropic key.
+            in any channel — answers land in the thread. The thin bridge between
+            Slack and Claude managed agents. Bring your own Anthropic key.
           </p>
 
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
             <AddToSlackButton variant="dark" size="lg" />
             <Link href="/signup" className="rl-btn rl-btn-primary rl-btn-lg">
-              Create workspace — it&apos;s free
+              Start free in 2 minutes
             </Link>
             <Link
               href="/login"
@@ -185,13 +190,13 @@ function Hero() {
             }}
           >
             <span>✓ BYO Anthropic key</span>
-            <span>✓ OAuth per workspace</span>
-            <span>✓ Up to 25 users, 25 agents</span>
+            <span>✓ Slack OAuth, workspace-scoped</span>
+            <span>✓ 25 users · 25 agents</span>
           </div>
         </div>
 
-        {/* Animated Slack preview */}
-        <HeroSlackPreview />
+        {/* Animated setup-then-use flow */}
+        <HeroFlow />
       </div>
     </section>
   );
@@ -205,6 +210,7 @@ export default function Landing() {
 
       <HowItWorks />
       <Features />
+      <InAction />
       <Commands />
       <PowerloomCallout />
       <CTA />
