@@ -29,6 +29,7 @@ from relay_api.routes import (  # noqa: E402
     agents,
     audit,
     auth,
+    cma,
     health,
     invites,
     me,
@@ -85,6 +86,7 @@ def create_app() -> FastAPI:
     app.include_router(users.router)
     app.include_router(invites.router)
     app.include_router(agents.router)
+    app.include_router(cma.router)
     app.include_router(workspace_routes.router)
     app.include_router(audit.router)
 

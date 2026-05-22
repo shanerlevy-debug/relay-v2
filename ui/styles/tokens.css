@@ -315,6 +315,13 @@ body {
   text-underline-offset: 2px;
 }
 
+@keyframes rl-spin-kf {
+  to { transform: rotate(360deg); }
+}
+.rl-spin {
+  animation: rl-spin-kf 0.9s linear infinite;
+}
+
 /* Focus ring */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: none;
