@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AddToSlackButton } from "@/components/AddToSlackButton";
+
 /**
  * Final CTA. Centered, light-mode, single primary action.
  */
@@ -33,7 +35,8 @@ export function CTA() {
           and the next time someone needs an answer in #help they&apos;ll have one
           before they finish typing the question.
         </p>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <AddToSlackButton size="lg" />
           <Link href="/signup" className="rl-btn rl-btn-primary rl-btn-lg">
             Create your workspace
           </Link>

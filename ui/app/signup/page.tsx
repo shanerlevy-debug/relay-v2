@@ -1,12 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
 
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { RelayMark } from "@/components/RelayMark";
 import { ApiError, signup } from "@/lib/api";
+
+const SLACK_BANNER_MESSAGES: Record<string, string> = {
+  email_unavailable:
+    "Slack didn't share an email for your account. Sign up here and you can connect Slack from Settings after.",
+  error:
+    "Something went wrong installing from Slack. Sign up here and try connecting from Settings.",
+};
 
 const ERROR_MESSAGES: Record<string, { field?: "email" | "password" | "workspace_name"; message: string }> = {
   email_in_use: {
@@ -28,7 +35,19 @@ const ERROR_MESSAGES: Record<string, { field?: "email" | "password" | "workspace
 };
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupPageInner />
+    </Suspense>
+  );
+}
+
+function SignupPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const slackFlag = searchParams.get("slack");
+  const slackBanner = slackFlag ? SLACK_BANNER_MESSAGES[slackFlag] : null;
+
   const [workspaceName, setWorkspaceName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -119,6 +138,23 @@ export default function SignupPage() {
         >
           Free up to 25 users and 25 agents. BYO Anthropic key.
         </p>
+
+        {slackBanner && (
+          <div
+            style={{
+              padding: "10px 12px",
+              background: "var(--color-relay-tint, rgba(255, 138, 95, 0.08))",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-sm)",
+              color: "var(--color-fg2)",
+              fontSize: 13,
+              lineHeight: 1.4,
+              marginBottom: 16,
+            }}
+          >
+            {slackBanner}
+          </div>
+        )}
 
         <div style={{ marginBottom: 16 }}>
           <GoogleSignInButton label="Sign up with Google" />

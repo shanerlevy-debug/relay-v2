@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * "Continue with Google" button — links to /api/oauth/google/start.
  *

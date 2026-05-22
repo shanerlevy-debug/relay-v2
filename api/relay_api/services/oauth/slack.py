@@ -49,6 +49,7 @@ from relay_api.services.oauth.base import (
 AUTHORIZE_URL = "https://slack.com/oauth/v2/authorize"
 TOKEN_EXCHANGE_URL = "https://slack.com/api/oauth.v2.access"
 REVOKE_URL = "https://slack.com/api/auth.revoke"
+USERS_INFO_URL = "https://slack.com/api/users.info"
 
 
 # Default bot scopes — matches what Relay v1 actually needs at runtime.
@@ -73,6 +74,15 @@ def _configured_bot_scopes() -> tuple[str, ...]:
 
 
 @dataclass(frozen=True)
+class SlackUserInfo:
+    """Subset of Slack's `users.info` response we care about for bootstrap."""
+
+    user_id: str
+    email: str
+    display_name: str | None
+
+
+@dataclass(frozen=True)
 class SlackInstallExchange:
     """Structured form of the relevant subset of Slack's `oauth.v2.access`
     response. The full dict is also returned (as `raw`) for the service
@@ -88,6 +98,7 @@ class SlackInstallExchange:
     team_name: str
     enterprise_id: str | None
     enterprise_name: str | None
+    authed_user_id: str | None  # Slack ID of the human who clicked install
 
 
 class SlackProvider:
@@ -121,6 +132,38 @@ class SlackProvider:
             "user_id": user_id,
         })
 
+        effective_scopes = bot_scopes or _configured_bot_scopes()
+        query = urllib.parse.urlencode({
+            "client_id": client_id,
+            "scope": ",".join(effective_scopes),
+            "redirect_uri": redirect_uri,
+            "state": nonce,
+        })
+        return OAuthStartResult(
+            authorization_url=f"{AUTHORIZE_URL}?{query}",
+            state_cookie_value=state_cookie,
+        )
+
+    def start_install_anonymous(
+        self,
+        *,
+        redirect_uri: str,
+        bot_scopes: tuple[str, ...] | None = None,
+    ) -> OAuthStartResult:
+        """Variant of start_install for the anonymous Add-to-Slack flow.
+
+        Same Slack URL shape, but the state payload carries `{"anonymous":
+        true}` instead of workspace_id+user_id. The callback uses that
+        marker to dispatch to the bootstrap path.
+        """
+        client_id = settings.OAUTH_SLACK_CLIENT_ID
+        if not client_id:
+            raise OAuthError("Slack OAuth not configured", code="misconfigured")
+        nonce = _py_secrets.token_urlsafe(24)
+        state_cookie = serialize_state({
+            "nonce": nonce,
+            "anonymous": True,
+        })
         effective_scopes = bot_scopes or _configured_bot_scopes()
         query = urllib.parse.urlencode({
             "client_id": client_id,
@@ -193,6 +236,7 @@ class SlackProvider:
                 code="exchange_failed",
             )
 
+        authed_user = body.get("authed_user") or {}
         return SlackInstallExchange(
             raw=body,
             bot_token=bot_token,
@@ -205,6 +249,64 @@ class SlackProvider:
             team_name=team.get("name") or team["id"],
             enterprise_id=(enterprise or {}).get("id") if enterprise else None,
             enterprise_name=(enterprise or {}).get("name") if enterprise else None,
+            authed_user_id=authed_user.get("id") or None,
+        )
+
+    async def get_user_info(
+        self,
+        *,
+        bot_token: str,
+        user_id: str,
+    ) -> SlackUserInfo:
+        """Look up a Slack user's email + display name via users.info.
+
+        Used by the Add-to-Slack bootstrap path: the installer is identified
+        by `authed_user.id` in the OAuth response, but the *email* isn't
+        in that response — it lives behind the users:read.email scope and
+        a separate API call.
+
+        Raises OAuthError on any failure including missing email. Slack will
+        omit the email field if the user's profile has no email or if the
+        bot wasn't granted users:read.email — both are user-recoverable, so
+        the route layer maps them to `email_unavailable`.
+        """
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                USERS_INFO_URL,
+                params={"user": user_id},
+                headers={"Authorization": f"Bearer {bot_token}"},
+            )
+        if resp.status_code != 200:
+            raise OAuthError(
+                f"slack users.info http {resp.status_code}",
+                code="userinfo_failed",
+            )
+        body = resp.json()
+        if not body.get("ok"):
+            raise OAuthError(
+                f"slack users.info returned ok=false: {body.get('error')!r}",
+                code="userinfo_failed",
+            )
+        user = body.get("user") or {}
+        profile = user.get("profile") or {}
+        email = (profile.get("email") or "").strip().lower()
+        if not email:
+            # Either the scope wasn't granted or the user has no email on
+            # their Slack profile. Either way we can't bootstrap.
+            raise OAuthError(
+                "Slack did not return an email for the installer",
+                code="email_unavailable",
+            )
+        display_name = (
+            profile.get("real_name")
+            or profile.get("display_name")
+            or user.get("real_name")
+            or None
+        )
+        return SlackUserInfo(
+            user_id=user_id,
+            email=email,
+            display_name=display_name,
         )
 
     async def revoke(self, *, bot_token: str) -> None:

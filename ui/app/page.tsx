@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AddToSlackButton } from "@/components/AddToSlackButton";
 import { HeroSlackPreview } from "@/components/HeroSlackPreview";
 import { CTA } from "@/components/landing/CTA";
 import { Commands } from "@/components/landing/Commands";
@@ -142,7 +143,8 @@ function Hero() {
             in any channel, get an answer in the thread. Bring your own Anthropic key.
           </p>
 
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 48 }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
+            <AddToSlackButton variant="dark" size="lg" />
             <Link href="/signup" className="rl-btn rl-btn-primary rl-btn-lg">
               Create workspace — it&apos;s free
             </Link>
@@ -160,6 +162,16 @@ function Hero() {
               Sign in →
             </Link>
           </div>
+          <p
+            style={{
+              fontSize: 12,
+              color: "rgb(var(--ink-300))",
+              margin: "0 0 48px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            One click. We create the workspace from your Slack team.
+          </p>
 
           <div
             style={{

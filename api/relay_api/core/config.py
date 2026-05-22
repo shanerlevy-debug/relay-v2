@@ -61,9 +61,14 @@ class Settings(BaseSettings):
     # encrypted into workspace_slack_installs after `oauth.v2.access`.
     OAUTH_SLACK_CLIENT_ID: str | None = None
     OAUTH_SLACK_CLIENT_SECRET: str | None = None
+    # Note: users:read + users:read.email are required for the "Add to Slack"
+    # bootstrap flow (anonymous install → look up installer's email via
+    # users.info → create a Relay workspace). Existing in-product "Connect
+    # Slack" doesn't strictly need them but harmless to grant.
     OAUTH_SLACK_BOT_SCOPES: str = (
         "app_mentions:read chat:write chat:write.public "
-        "channels:history im:history im:write commands"
+        "channels:history im:history im:write commands "
+        "users:read users:read.email team:read"
     )
 
     # ---- Google OAuth (login + signup) ----

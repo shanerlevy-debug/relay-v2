@@ -1,15 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
 
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { RelayMark } from "@/components/RelayMark";
 import { ApiError, login } from "@/lib/api";
 
+const SLACK_BANNER_MESSAGES: Record<string, string> = {
+  email_in_use:
+    "An account with this Slack email already exists. Sign in here, then connect Slack from Settings.",
+  team_already_connected:
+    "This Slack workspace is already connected to a Relay account. Sign in below.",
+};
+
 export default function LoginPage() {
+  // useSearchParams forces a CSR bailout for static prerender — wrap the
+  // real component in a Suspense boundary so /login still prerenders.
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const slackFlag = searchParams.get("slack");
+  const slackBanner = slackFlag ? SLACK_BANNER_MESSAGES[slackFlag] : null;
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -86,6 +107,23 @@ export default function LoginPage() {
         >
           Welcome back
         </h1>
+
+        {slackBanner && (
+          <div
+            style={{
+              padding: "10px 12px",
+              background: "var(--color-relay-tint, rgba(255, 138, 95, 0.08))",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-sm)",
+              color: "var(--color-fg2)",
+              fontSize: 13,
+              lineHeight: 1.4,
+              marginBottom: 16,
+            }}
+          >
+            {slackBanner}
+          </div>
+        )}
 
         <div style={{ marginBottom: 16 }}>
           <GoogleSignInButton />
