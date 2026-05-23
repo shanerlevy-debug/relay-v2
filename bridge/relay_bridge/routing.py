@@ -28,8 +28,8 @@ from sqlalchemy import select
 from relay_api.db.models import Agent, SlackThread
 from relay_api.services.agents import (
     find_default_agent,
+    get_agent_by_addressable_name,
     get_agent_by_id,
-    get_agent_by_slug,
 )
 
 if TYPE_CHECKING:
@@ -89,9 +89,12 @@ def route_message(
     # agent_id + last_session_id with the new agent's.
     parts = cleaned.split(None, 1)
     if parts:
-        candidate_slug = parts[0].lower()
-        explicit = get_agent_by_slug(
-            db, workspace_id=workspace_id, slug=candidate_slug
+        # Match by whatever the user typed — slug OR slack_display_name.
+        # If the agent's slug is `helpdesk` and slack_display_name is
+        # `Slackie`, typing either word as the first token routes here.
+        candidate = parts[0]
+        explicit = get_agent_by_addressable_name(
+            db, workspace_id=workspace_id, name=candidate
         )
         if explicit is not None:
             # If the explicit slug matches the already-pinned agent, treat

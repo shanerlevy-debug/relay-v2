@@ -484,6 +484,7 @@ def register_handlers(app: App) -> None:
         if event.get("channel_type") == "im":
             channel_id = event["channel"]
             thread_ts = event.get("thread_ts") or event["ts"]
+            log.info("message.dm", channel_id=channel_id, team_id=team_id)
             handle_message(
                 client=client,
                 text=event.get("text", ""),
@@ -496,12 +497,23 @@ def register_handlers(app: App) -> None:
         # Channel messages — only respond inside an already-pinned thread.
         thread_ts = event.get("thread_ts")
         if not thread_ts:
+            log.debug(
+                "message.channel_top_level_ignored",
+                channel_id=event.get("channel"),
+                team_id=team_id,
+            )
             return
         channel_id = event["channel"]
 
         with SessionLocal() as db:
             tenant = resolve_tenant(db, team_id=team_id)
             if tenant is None:
+                log.info(
+                    "message.thread_no_tenant",
+                    team_id=team_id,
+                    channel_id=channel_id,
+                    thread_ts=thread_ts,
+                )
                 return
             from sqlalchemy import select
             from relay_api.db.models import SlackThread
@@ -513,7 +525,20 @@ def register_handlers(app: App) -> None:
                 )
             ).scalar_one_or_none()
             if pinned is None:
+                log.info(
+                    "message.thread_not_pinned",
+                    workspace_id=str(tenant.workspace.id),
+                    channel_id=channel_id,
+                    thread_ts=thread_ts,
+                )
                 return
+            log.info(
+                "message.thread_pinned_match",
+                workspace_id=str(tenant.workspace.id),
+                channel_id=channel_id,
+                thread_ts=thread_ts,
+                pinned_agent_id=str(pinned.agent_id),
+            )
 
         handle_message(
             client=client,

@@ -111,6 +111,37 @@ def get_agent_by_slug(
     ).scalar_one_or_none()
 
 
+def get_agent_by_addressable_name(
+    db: Session,
+    *,
+    workspace_id: uuid.UUID,
+    name: str,
+) -> Agent | None:
+    """Match `name` (case-insensitive) against either an agent's slug OR
+    its slack_display_name. Used by the bridge router so a user can
+    address an agent by whatever label they see in Slack — typing
+    "slackie" works whether "slackie" is the slug or the persona name.
+
+    Collision policy: if both a different agent's slug and another's
+    display_name happen to match, the display_name match wins. The user
+    is staring at the display_name in Slack; matching what they see
+    beats matching an internal identifier.
+    """
+    n = (name or "").strip().lower()
+    if not n:
+        return None
+    # display_name match first — visible to the user takes priority.
+    by_display = db.execute(
+        select(Agent)
+        .where(Agent.workspace_id == workspace_id)
+        .where(Agent.archived_at.is_(None))
+        .where(func.lower(Agent.slack_display_name) == n)
+    ).scalar_one_or_none()
+    if by_display is not None:
+        return by_display
+    return get_agent_by_slug(db, workspace_id=workspace_id, slug=n)
+
+
 def find_default_agent(
     db: Session,
     *,
