@@ -280,44 +280,44 @@ def handle_message(
 
     `slack_thread_ts` is the existing thread to reply IN (for @mentions,
     DMs, threaded follow-ups). For slash commands it's None — we post
-    top-level and use the placeholder's own ts as the thread anchor.
+    top-level and the placeholder's own ts becomes the thread anchor.
+
+    Order matters for Slack persona overrides: `chat.update` does NOT
+    change the displayed username / icon of a message that's already been
+    posted (Slack only honors username/icon at `chat.postMessage` time).
+    So we resolve routing FIRST and post the placeholder under the
+    agent's persona; the subsequent chat.update for the real reply
+    inherits that identity automatically.
     """
-    # Post placeholder FIRST so we have a ts for the pin/anchor.
-    try:
-        placeholder = client.chat_postMessage(
-            channel=channel_id,
-            thread_ts=slack_thread_ts,
-            text="_thinking…_",
-        )
-    except SlackApiError:
-        log.exception("slack.placeholder_failed")
-        return
-
-    pin_key_thread_ts = slack_thread_ts or placeholder["ts"]
-    anchor_ts = slack_thread_ts or placeholder["ts"]
-
     with SessionLocal() as db:
         tenant = resolve_tenant(db, team_id=team_id)
         if tenant is None:
             log.info("tenant.unknown_team_id", team_id=team_id)
-            # Don't reply — we shouldn't even be hearing from this workspace.
-            # Replace the placeholder with a quiet apology message.
+            # Disconnected workspace — post a one-shot apology. No
+            # placeholder dance since we have nothing to update.
             try:
-                client.chat_update(
+                client.chat_postMessage(
                     channel=channel_id,
-                    ts=placeholder["ts"],
+                    thread_ts=slack_thread_ts,
                     text="_This workspace isn't connected to Relay anymore._",
                 )
             except SlackApiError:
                 pass
             return
 
+        # Pre-resolve routing so we can post the placeholder under the
+        # right persona. thread_ts for the route lookup: if the caller
+        # gave us one we use it; otherwise (slash command) we don't have
+        # a thread yet, so we look up by the channel + a synthetic key
+        # the router treats as "no pin exists." Real pins only happen
+        # for app_mentions / DMs / threaded follow-ups, all of which
+        # have a non-None slack_thread_ts.
         routing = route_message(
             db,
             workspace_id=tenant.workspace.id,
             text=text,
             channel_id=channel_id,
-            thread_ts=pin_key_thread_ts,
+            thread_ts=slack_thread_ts or "",
         )
         log.info(
             "routing.resolved",
@@ -326,58 +326,55 @@ def handle_message(
             workspace_id=str(tenant.workspace.id),
         )
 
-        if routing.agent is None:
+        # Early-exit error / help paths — post as a single new message,
+        # no placeholder/update cycle.
+        if routing.agent is None or not routing.prompt:
             slugs = _list_active_slugs(db, workspace_id=tenant.workspace.id)
             reply = _help_text(routing, slugs)
             try:
-                client.chat_update(
+                client.chat_postMessage(
                     channel=channel_id,
-                    ts=placeholder["ts"],
+                    thread_ts=slack_thread_ts,
                     text=reply,
                 )
             except SlackApiError:
-                log.exception("slack.help_chat_update_failed")
-            return
-
-        if not routing.prompt:
-            slugs = _list_active_slugs(db, workspace_id=tenant.workspace.id)
-            reply = _help_text(routing, slugs)
-            try:
-                client.chat_update(
-                    channel=channel_id, ts=placeholder["ts"], text=reply
-                )
-            except SlackApiError:
-                pass
+                log.exception("slack.help_post_failed")
             return
 
         if tenant.anthropic_key is None:
-            reply = (
-                "_This workspace needs an Anthropic API key. An admin can add "
-                "one in Settings._"
-            )
             try:
-                client.chat_update(
-                    channel=channel_id, ts=placeholder["ts"], text=reply
+                client.chat_postMessage(
+                    channel=channel_id,
+                    thread_ts=slack_thread_ts,
+                    text=(
+                        "_This workspace needs an Anthropic API key. "
+                        "An admin can add one in Settings._"
+                    ),
                 )
             except SlackApiError:
                 pass
             return
 
-        # Update placeholder with the chosen agent name + apply the persona
-        # override now that we know which agent will answer.
+        # Happy path — agent + prompt + key all present. Post the
+        # placeholder UNDER the agent's persona so subsequent
+        # chat.update inherits the identity.
         persona = _persona_kwargs(routing.agent)
         display_label = (
             routing.agent.slack_display_name or routing.agent.slug
         )
         try:
-            client.chat_update(
+            placeholder = client.chat_postMessage(
                 channel=channel_id,
-                ts=placeholder["ts"],
+                thread_ts=slack_thread_ts,
                 text=f"_{display_label} is thinking…_",
                 **persona,
             )
         except SlackApiError:
-            pass
+            log.exception("slack.placeholder_failed")
+            return
+
+        pin_key_thread_ts = slack_thread_ts or placeholder["ts"]
+        anchor_ts = slack_thread_ts or placeholder["ts"]
 
         # Invoke CMA.
         existing_session_id = (
