@@ -920,34 +920,13 @@ function BrowsePane({
         hint={`${agents.length} active`}
         error={errorField === "anthropic_agent_id" ? "pick one" : null}
       >
-        <div style={{ position: "relative" }}>
-          <select
-            value={anthropicAgentId}
-            onChange={(e) => onPickAgent(e.target.value)}
-            disabled={disabled}
-            className="rl-input"
-            style={{ appearance: "none", paddingRight: 32 }}
-            required
-          >
-            <option value="">Pick an agent…</option>
-            {agents.map((a) => (
-              <option key={a.id} value={a.id}>
-                {agentLabel(a)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={14}
-            style={{
-              position: "absolute",
-              right: 10,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "var(--color-fg3)",
-              pointerEvents: "none",
-            }}
-          />
-        </div>
+        <RichAgentSelect
+          agents={agents}
+          value={anthropicAgentId}
+          onChange={onPickAgent}
+          disabled={disabled}
+          error={errorField === "anthropic_agent_id"}
+        />
       </Field>
 
       {selectedAgent && selectedAgent.system && (
@@ -1179,13 +1158,201 @@ function PastePane({
 // Picker label helpers
 // ---------------------------------------------------------------------------
 
-function agentLabel(a: CmaAgentSummary): string {
-  const model = a.model ?? "(unknown model)";
-  const systemPreview = preview(a.system, 60);
-  if (systemPreview) {
-    return `${a.id.slice(0, 14)}…  ·  ${model}  —  ${systemPreview}`;
-  }
-  return `${a.id}  ·  ${model}`;
+/**
+ * Two-tier dropdown for the CMA agents list. Native <select> can't render
+ * multi-line styled options, so this is a small custom popover — friendly
+ * description (first line of the system prompt) on top, model + agent_id
+ * in smaller mono text underneath.
+ *
+ * Click-outside + Esc both close it. Keyboard nav (arrow keys) is
+ * deferred — most users browse with the mouse here and the dialog has
+ * other inputs that need keyboard focus.
+ */
+function RichAgentSelect({
+  agents,
+  value,
+  onChange,
+  disabled,
+  error,
+}: {
+  agents: CmaAgentSummary[];
+  value: string;
+  onChange: (id: string) => void;
+  disabled: boolean;
+  error: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const selected = agents.find((a) => a.id === value) ?? null;
+
+  useEffect(() => {
+    if (!open) return;
+    function onMouseDown(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => !disabled && setOpen((v) => !v)}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        style={{
+          width: "100%",
+          textAlign: "left",
+          padding: "10px 12px",
+          background: "var(--color-surface)",
+          border: `1px solid ${error ? "var(--color-danger-border)" : "var(--color-border)"}`,
+          borderRadius: "var(--radius-sm)",
+          fontSize: 13,
+          fontFamily: "inherit",
+          cursor: disabled ? "not-allowed" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          color: "var(--color-fg1)",
+          minHeight: 48,
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {selected ? (
+            <>
+              <RichLine main>
+                {preview(selected.system, 80) || selected.model || selected.id}
+              </RichLine>
+              <RichLine>
+                {selected.model
+                  ? `${selected.model}  ·  ${selected.id}`
+                  : selected.id}
+              </RichLine>
+            </>
+          ) : (
+            <span style={{ color: "var(--color-fg3)" }}>Pick an agent…</span>
+          )}
+        </div>
+        <ChevronDown
+          size={14}
+          style={{ color: "var(--color-fg3)", flexShrink: 0 }}
+        />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            maxHeight: 320,
+            overflowY: "auto",
+            background: "var(--color-surface-2)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-sm)",
+            boxShadow:
+              "0 4px 12px rgb(0 0 0 / 0.08), 0 1px 3px rgb(0 0 0 / 0.04)",
+            zIndex: 50,
+          }}
+        >
+          {agents.map((a, idx) => {
+            const isSelected = a.id === value;
+            return (
+              <button
+                type="button"
+                key={a.id}
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => {
+                  onChange(a.id);
+                  setOpen(false);
+                }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "10px 12px",
+                  background: isSelected
+                    ? "var(--color-accent-tint)"
+                    : "transparent",
+                  border: 0,
+                  borderTop:
+                    idx === 0
+                      ? "none"
+                      : "1px solid var(--color-border-subtle)",
+                  fontFamily: "inherit",
+                  cursor: "pointer",
+                  color: "var(--color-fg1)",
+                  transition: "background 80ms var(--ease-std)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = "var(--color-surface-3)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = "transparent";
+                  }
+                }}
+              >
+                <RichLine main bold={isSelected}>
+                  {preview(a.system, 100) || a.model || a.id}
+                </RichLine>
+                <RichLine>
+                  {a.model ? `${a.model}  ·  ${a.id}` : a.id}
+                </RichLine>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RichLine({
+  children,
+  main,
+  bold,
+}: {
+  children: React.ReactNode;
+  main?: boolean;
+  bold?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        fontSize: main ? 13 : 11,
+        color: main ? "var(--color-fg1)" : "var(--color-fg3)",
+        fontFamily: main ? "inherit" : "var(--font-mono)",
+        fontWeight: bold ? 500 : 400,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        lineHeight: 1.4,
+        marginTop: main ? 0 : 2,
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
 function environmentLabel(e: CmaEnvironmentSummary): string {
