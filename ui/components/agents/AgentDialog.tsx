@@ -157,9 +157,21 @@ export function AgentDialog({ open, onClose, onSaved, editing }: AgentDialogProp
         if (cancelled) return;
         setCmaAgents(a.agents);
         setCmaEnvironments(e.environments);
-        // Auto-select the first environment if the user has exactly one — that's
-        // the common case for a workspace using Relay's default-env-per-tenant pattern.
-        if (e.environments.length === 1) {
+        // Auto-select an environment so the user isn't asked to pick from a
+        // list they don't understand. Precedence:
+        //   1. The workspace's last-used environment (server-side default)
+        //      — set every time an agent is saved with an env_id.
+        //   2. If the workspace has exactly one environment, that one.
+        //   3. Otherwise the first in the list. The user can still change
+        //      it in the dropdown; this just unblocks first-time saves.
+        const defaultId = e.default_environment_id ?? null;
+        const exists = (id: string | null) =>
+          !!id && e.environments.some((env) => env.id === id);
+        if (exists(defaultId)) {
+          setEnvironmentId(defaultId!);
+        } else if (e.environments.length === 1) {
+          setEnvironmentId(e.environments[0].id);
+        } else if (e.environments.length > 1) {
           setEnvironmentId(e.environments[0].id);
         }
       })
@@ -958,7 +970,9 @@ function BrowsePane({
             ? "no environments"
             : environments.length === 1
               ? "auto-selected"
-              : `${environments.length} available`
+              : environmentId
+                ? "auto-selected · change if needed"
+                : `${environments.length} available`
         }
         error={errorField === "environment_id" ? "pick one" : null}
       >

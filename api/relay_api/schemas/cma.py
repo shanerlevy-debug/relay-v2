@@ -23,3 +23,6 @@ class CmaAgentsListOut(BaseModel):
 
 class CmaEnvironmentsListOut(BaseModel):
     environments: list[CmaEnvironmentSummaryOut]
+    # Last environment used when creating/updating an agent in this
+    # workspace. The Add Agent picker pre-selects this when set.
+    default_environment_id: str | None = None

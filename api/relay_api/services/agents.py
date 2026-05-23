@@ -21,7 +21,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from relay_api.core.config import settings
-from relay_api.db.models import Agent
+from relay_api.db.models import Agent, Workspace
 
 _SLUG_RE = re.compile(r"^[a-z][a-z0-9-]*$")
 _MAX_SLUG_LEN = 64
@@ -235,8 +235,28 @@ def create_agent(
         slack_icon_url=slack_icon_url,
     )
     db.add(agent)
+    # Remember the chosen environment as the workspace default so the
+    # next AgentDialog auto-selects it. Pure UX hint; not a constraint.
+    _remember_environment(db, workspace_id=workspace_id, environment_id=environment_id)
     db.flush()
     return agent
+
+
+def _remember_environment(
+    db: Session,
+    *,
+    workspace_id: uuid.UUID,
+    environment_id: str,
+) -> None:
+    """Update workspace.cma_default_environment_id = environment_id.
+    Cheap UPDATE — only writes if the value would actually change."""
+    if not environment_id:
+        return
+    workspace = db.get(Workspace, workspace_id)
+    if workspace is None:
+        return
+    if workspace.cma_default_environment_id != environment_id:
+        workspace.cma_default_environment_id = environment_id
 
 
 def update_agent(
@@ -291,6 +311,9 @@ def update_agent(
         if not v:
             raise AgentError("environment_id cannot be empty", code="invalid")
         agent.environment_id = v
+        _remember_environment(
+            db, workspace_id=agent.workspace_id, environment_id=v
+        )
 
     if description is not None:
         agent.description = description.strip() or None

@@ -64,6 +64,13 @@ class Workspace(Base):
     )
     slack_team_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # The last CMA environment_id used when adding/editing an agent in
+    # this workspace. Used by the AgentDialog's environment picker to
+    # pre-select a sensible default for the next agent. Pure UX state —
+    # the actual env binding lives on each agent row.
+    cma_default_environment_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         server_default=func.now(),
         nullable=False,

@@ -287,6 +287,8 @@ export interface CmaAgentsList {
 
 export interface CmaEnvironmentsList {
   environments: CmaEnvironmentSummary[];
+  /** Last environment used in this workspace — the picker pre-selects this. */
+  default_environment_id: string | null;
 }
 
 export async function listCmaAgents(): Promise<CmaAgentsList> {

@@ -78,5 +78,6 @@ def get_cma_environments(
     except CmaDiscoveryError as e:
         raise _to_http(e) from e
     return CmaEnvironmentsListOut(
-        environments=[CmaEnvironmentSummaryOut(**e.__dict__) for e in envs]
+        environments=[CmaEnvironmentSummaryOut(**e.__dict__) for e in envs],
+        default_environment_id=workspace.cma_default_environment_id,
     )
