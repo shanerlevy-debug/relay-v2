@@ -196,6 +196,13 @@ async def get_callback(
         )
         db.add(user)
         db.flush()
+        # Seed default group + admin membership for the new workspace.
+        from relay_api.services.groups import (
+            add_user_to_default_group,
+            create_default_group,
+        )
+        create_default_group(db, workspace=workspace)
+        add_user_to_default_group(db, user=user)
         db.add(AuditLog(
             workspace_id=workspace.id,
             actor_user_id=user.id,

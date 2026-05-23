@@ -24,6 +24,7 @@ from relay_api.core.config import settings
 from relay_api.core.logging import get_logger
 from relay_api.db.models import AuditLog
 from relay_api.db.session import SessionLocal
+from relay_api.services.groups import slack_user_can_access_agent
 
 from relay_bridge.cma import invoke_agent
 from relay_bridge.routing import RoutingResult, route_message, upsert_thread_pin
@@ -275,6 +276,7 @@ def handle_message(
     team_id: str,
     channel_id: str,
     slack_thread_ts: str | None,
+    slack_user_id: str | None = None,
 ) -> None:
     """Drive one user turn end-to-end.
 
@@ -353,6 +355,39 @@ def handle_message(
                 )
             except SlackApiError:
                 pass
+            return
+
+        # Group-based access check. Known Slack users get the
+        # intersection of their group set and the agent's group set;
+        # unknown Slack users are treated as members of the default
+        # group only. If the agent's groups don't overlap, deny.
+        if not slack_user_can_access_agent(
+            db,
+            workspace_id=tenant.workspace.id,
+            slack_user_id=slack_user_id,
+            agent_id=routing.agent.id,
+        ):
+            display_label = (
+                routing.agent.slack_display_name or routing.agent.slug
+            )
+            try:
+                client.chat_postMessage(
+                    channel=channel_id,
+                    thread_ts=slack_thread_ts,
+                    text=(
+                        f"_You don't have access to *{display_label}*. "
+                        "Ask an admin to add you to a group that includes it._"
+                    ),
+                )
+            except SlackApiError:
+                pass
+            log.info(
+                "access.denied",
+                workspace_id=str(tenant.workspace.id),
+                slack_user_id=slack_user_id,
+                agent_id=str(routing.agent.id),
+                slug=routing.agent.slug,
+            )
             return
 
         # Happy path — agent + prompt + key all present. Post the
@@ -468,6 +503,7 @@ def register_handlers(app: App) -> None:
             team_id=team_id,
             channel_id=channel_id,
             slack_thread_ts=thread_ts,
+            slack_user_id=event.get("user"),
         )
 
     @app.event("message")
@@ -491,6 +527,7 @@ def register_handlers(app: App) -> None:
                 team_id=team_id,
                 channel_id=channel_id,
                 slack_thread_ts=thread_ts,
+                slack_user_id=event.get("user"),
             )
             return
 
@@ -546,6 +583,7 @@ def register_handlers(app: App) -> None:
             team_id=team_id,
             channel_id=channel_id,
             slack_thread_ts=thread_ts,
+            slack_user_id=event.get("user"),
         )
 
     @app.command(settings.RELAY_SLACK_SLASH_COMMAND)
@@ -567,6 +605,7 @@ def register_handlers(app: App) -> None:
                 team_id=team_id,
                 channel_id=command["channel_id"],
                 slack_thread_ts=None,  # slash commands post top-level
+                slack_user_id=command.get("user_id"),
             )
             return
 
@@ -657,10 +696,12 @@ def register_handlers(app: App) -> None:
         # Route as if the user had typed `/relay <slug> <prompt>`. The
         # router resolves the explicit-slug branch and the rest of the
         # placeholder/CMA/post pipeline runs identically.
+        invoker_id = (body.get("user") or {}).get("id")
         handle_message(
             client=client,
             text=f"{slug} {prompt}",
             team_id=team_id,
             channel_id=channel_id,
             slack_thread_ts=None,
+            slack_user_id=invoker_id,
         )

@@ -1,14 +1,18 @@
 "use client";
 
 import { Plus, Trash2, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { LimitHitDialog } from "@/components/agents/LimitHitDialog";
+import { GroupChips } from "@/components/groups/GroupChips";
 import { InviteDialog } from "@/components/users/InviteDialog";
 import { Card } from "@/components/ui/Card";
 import {
   ApiError,
   deleteUser,
+  getGroupMemberships,
+  GroupMembershipMap,
+  GroupSummary,
   InviteOut,
   listUsers,
   UserListItem,
@@ -26,14 +30,31 @@ export function UsersView({ initial, currentUserId, isAdmin }: UsersViewProps) {
   const [inviting, setInviting] = useState(false);
   const [limitHit, setLimitHit] = useState(false);
   const [topError, setTopError] = useState<string | null>(null);
+  const [memberships, setMemberships] = useState<GroupMembershipMap | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getGroupMemberships()
+      .then((m) => { if (!cancelled) setMemberships(m); })
+      .catch(() => { /* non-fatal — chips just stay empty */ });
+    return () => { cancelled = true; };
+  }, []);
 
   async function refresh() {
     try {
-      const next = await listUsers();
+      const [next, m] = await Promise.all([
+        listUsers(),
+        getGroupMemberships().catch(() => null),
+      ]);
       setData(next);
+      if (m) setMemberships(m);
     } catch (err) {
       setTopError(err instanceof Error ? err.message : "Failed to reload users.");
     }
+  }
+
+  function groupsForUser(userId: string): GroupSummary[] {
+    return memberships?.users[userId] ?? [];
   }
 
   function openInvite() {
@@ -150,6 +171,7 @@ export function UsersView({ initial, currentUserId, isAdmin }: UsersViewProps) {
         currentUserId={currentUserId}
         isAdmin={isAdmin}
         onRemove={onRemove}
+        groupsFor={groupsForUser}
       />
 
       {data.pending_invites.length > 0 && (
@@ -228,11 +250,13 @@ function ActiveUsersTable({
   currentUserId,
   isAdmin,
   onRemove,
+  groupsFor,
 }: {
   users: UserListItem[];
   currentUserId: string;
   isAdmin: boolean;
   onRemove: (user: UserListItem) => void;
+  groupsFor: (userId: string) => GroupSummary[];
 }) {
   return (
     <div className="rl-table rl-table-stack-on-mobile">
@@ -283,6 +307,14 @@ function ActiveUsersTable({
                   </span>
                 )}
               </div>
+              {(() => {
+                const gs = groupsFor(user.id);
+                return gs.length > 0 ? (
+                  <div style={{ marginTop: 4 }}>
+                    <GroupChips groups={gs} />
+                  </div>
+                ) : null;
+              })()}
             </div>
             <div className="mono-sm" style={{ color: "var(--color-fg2)" }}>
               {user.role}

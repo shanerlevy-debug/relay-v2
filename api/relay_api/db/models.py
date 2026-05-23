@@ -26,10 +26,12 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     ForeignKey,
     Index,
     LargeBinary,
+    PrimaryKeyConstraint,
     String,
     Text,
     UniqueConstraint,
@@ -547,3 +549,114 @@ class EnterpriseRequest(Base):
         nullable=False,
     )
     notified_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+
+# ---------------------------------------------------------------------------
+# groups (positive-grant access control)
+# ---------------------------------------------------------------------------
+
+
+class Group(Base):
+    """A named bag of users and agents inside one workspace.
+
+    Access rule: a user can talk to an agent iff (∃ group G) (user ∈ G) ∧
+    (agent ∈ G). No deny rules, no hierarchy — see the design doc Shane
+    signed off on. The seed migration creates one `is_default=True` group
+    per workspace at upgrade time (named after the workspace's
+    display_name, snapshot at creation, never auto-renamed). New users +
+    new agents are auto-added to that default group by the service layer.
+    """
+
+    __tablename__ = "groups"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    is_default: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, server_default=text("false")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False,
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    __table_args__ = (
+        # Case-insensitive uniqueness on name within the workspace — same
+        # shape as agents.slack_display_name. Created in alembic with a
+        # functional lower() expression that ORM-level Index can't model
+        # directly; the migration is the source of truth.
+        # At most one default group per workspace among active rows —
+        # also enforced by partial unique index in the migration.
+    )
+
+
+class GroupMembership(Base):
+    """Many-to-many edge: user ↔ group.
+
+    Composite PK; FK CASCADE on both sides cleans up automatically when
+    a user is deleted or a group is hard-deleted (we soft-delete groups
+    via archived_at, so cascade only fires on the rare hard-delete).
+    """
+
+    __tablename__ = "group_memberships"
+
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint("group_id", "user_id"),
+        Index("ix_group_memberships_user", "user_id"),
+    )
+
+
+class AgentGroup(Base):
+    """Many-to-many edge: agent ↔ group.
+
+    Same shape as GroupMembership. An agent always belongs to at least
+    one group when active (creation seeds the default group); removing
+    the last group from an agent is allowed but makes the agent
+    unreachable until at least one membership is re-added.
+    """
+
+    __tablename__ = "agent_groups"
+
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("groups.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    agent_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint("group_id", "agent_id"),
+        Index("ix_agent_groups_agent", "agent_id"),
+    )

@@ -7,6 +7,7 @@ import {
   Menu,
   ScrollText,
   Settings,
+  Shield,
   UsersRound,
   X,
 } from "lucide-react";
@@ -39,6 +40,7 @@ const NAV: Array<{
   { id: "home", label: "Home", href: "/home", Icon: LayoutDashboard },
   { id: "agents", label: "Agents", href: "/agents", Icon: Bot },
   { id: "users", label: "Users", href: "/users", Icon: UsersRound, adminOnly: true },
+  { id: "groups", label: "Groups", href: "/groups", Icon: Shield, adminOnly: true },
   { id: "settings", label: "Settings", href: "/settings", Icon: Settings, adminOnly: true },
   { id: "audit", label: "Audit", href: "/audit", Icon: ScrollText },
 ];

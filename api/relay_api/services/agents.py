@@ -270,6 +270,13 @@ def create_agent(
     # next AgentDialog auto-selects it. Pure UX hint; not a constraint.
     _remember_environment(db, workspace_id=workspace_id, environment_id=environment_id)
     db.flush()
+
+    # Auto-bucket the new agent into the workspace's default group.
+    # Local import — services.groups imports Agent.
+    from relay_api.services.groups import add_agent_to_default_group
+    add_agent_to_default_group(db, agent=agent)
+    db.flush()
+
     return agent
 
 

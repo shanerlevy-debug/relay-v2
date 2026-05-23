@@ -215,6 +215,11 @@ def accept_invite(
     db.add(user)
     db.flush()
 
+    # Auto-bucket the new user into the workspace's default group so they
+    # immediately have access to default-scoped agents.
+    from relay_api.services.groups import add_user_to_default_group
+    add_user_to_default_group(db, user=user)
+
     invite.accepted_at = _now()
     invite.accepted_by_user_id = user.id
     db.flush()

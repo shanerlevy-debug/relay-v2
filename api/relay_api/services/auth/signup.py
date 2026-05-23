@@ -87,6 +87,16 @@ def signup(
     db.add(user)
     db.flush()
 
+    # Seed the default group for the workspace + add the admin to it.
+    # Local import — services.groups imports auth-adjacent models and we
+    # don't want a top-level cycle.
+    from relay_api.services.groups import (
+        add_user_to_default_group,
+        create_default_group,
+    )
+    create_default_group(db, workspace=workspace)
+    add_user_to_default_group(db, user=user)
+
     return workspace, user
 
 

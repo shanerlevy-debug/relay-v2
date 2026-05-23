@@ -198,6 +198,14 @@ def bootstrap_from_slack_install(
     db.add(user)
     db.flush()
 
+    # Seed groups for the freshly-bootstrapped workspace + admin.
+    from relay_api.services.groups import (
+        add_user_to_default_group,
+        create_default_group,
+    )
+    create_default_group(db, workspace=workspace)
+    add_user_to_default_group(db, user=user)
+
     # 3. Persist the install (encrypted bot token, AAD-bound to install id).
     install_id = uuid.uuid4()
     nonce, ct = encrypt(exchange.bot_token, aad=install_id.bytes)

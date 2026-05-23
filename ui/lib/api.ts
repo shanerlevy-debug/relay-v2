@@ -300,6 +300,127 @@ export async function listCmaEnvironments(): Promise<CmaEnvironmentsList> {
 }
 
 // ---------------------------------------------------------------------------
+// Groups — positive-grant access control
+// ---------------------------------------------------------------------------
+
+export interface GroupOut {
+  id: string;
+  workspace_id: string;
+  name: string;
+  is_default: boolean;
+  created_at: string;
+  archived_at: string | null;
+}
+
+export interface GroupSummary {
+  id: string;
+  name: string;
+  is_default: boolean;
+}
+
+export interface GroupMemberUser {
+  id: string;
+  email: string;
+  role: "admin" | "member";
+}
+
+export interface GroupMemberAgent {
+  id: string;
+  slug: string;
+  slack_display_name: string | null;
+  slack_icon_url: string | null;
+}
+
+export interface GroupMembersOut {
+  group: GroupOut;
+  users: GroupMemberUser[];
+  agents: GroupMemberAgent[];
+}
+
+export interface GroupListOut {
+  groups: GroupOut[];
+}
+
+export interface GroupMembershipMap {
+  users: Record<string, GroupSummary[]>;
+  agents: Record<string, GroupSummary[]>;
+}
+
+export async function listGroups(): Promise<GroupListOut> {
+  return apiFetch<GroupListOut>("/api/groups");
+}
+
+export async function listGroupsServer(): Promise<GroupListOut> {
+  return serverFetch<GroupListOut>("/api/groups");
+}
+
+export async function getGroup(id: string): Promise<GroupMembersOut> {
+  return apiFetch<GroupMembersOut>(`/api/groups/${id}`);
+}
+
+export async function createGroup(name: string): Promise<GroupOut> {
+  return apiFetch<GroupOut>("/api/groups", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function renameGroup(id: string, name: string): Promise<GroupOut> {
+  return apiFetch<GroupOut>(`/api/groups/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function archiveGroup(id: string): Promise<void> {
+  return apiFetch<void>(`/api/groups/${id}`, { method: "DELETE" });
+}
+
+export async function addUserToGroup(
+  groupId: string,
+  userId: string,
+): Promise<void> {
+  return apiFetch<void>(`/api/groups/${groupId}/users/${userId}`, {
+    method: "PUT",
+  });
+}
+
+export async function removeUserFromGroup(
+  groupId: string,
+  userId: string,
+): Promise<void> {
+  return apiFetch<void>(`/api/groups/${groupId}/users/${userId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function addAgentToGroup(
+  groupId: string,
+  agentId: string,
+): Promise<void> {
+  return apiFetch<void>(`/api/groups/${groupId}/agents/${agentId}`, {
+    method: "PUT",
+  });
+}
+
+export async function removeAgentFromGroup(
+  groupId: string,
+  agentId: string,
+): Promise<void> {
+  return apiFetch<void>(`/api/groups/${groupId}/agents/${agentId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getGroupMemberships(): Promise<GroupMembershipMap> {
+  return apiFetch<GroupMembershipMap>("/api/groups/memberships");
+}
+
+export async function getGroupMembershipsServer(): Promise<GroupMembershipMap> {
+  return serverFetch<GroupMembershipMap>("/api/groups/memberships");
+}
+
+// ---------------------------------------------------------------------------
 // Users + invites
 // ---------------------------------------------------------------------------
 

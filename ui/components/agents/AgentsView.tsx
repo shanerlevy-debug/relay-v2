@@ -1,16 +1,20 @@
 "use client";
 
 import { Archive, Bot, Pencil, Plus, Star } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AgentDialog } from "@/components/agents/AgentDialog";
 import { LimitHitDialog } from "@/components/agents/LimitHitDialog";
+import { GroupChips } from "@/components/groups/GroupChips";
 import { Card } from "@/components/ui/Card";
 import {
   AgentListOut,
   AgentOut,
   ApiError,
   archiveAgent,
+  getGroupMemberships,
+  GroupMembershipMap,
+  GroupSummary,
   listAgents,
 } from "@/lib/api";
 
@@ -33,13 +37,35 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
   const [limitHit, setLimitHit] = useState(false);
   const [topError, setTopError] = useState<string | null>(null);
 
+  // Group memberships are fetched once on mount + refreshed alongside the
+  // agents list. Held in a flat map keyed by agent id; missing keys mean
+  // "no groups" (which renders as nothing rather than a "loading" state
+  // to avoid layout shift).
+  const [memberships, setMemberships] = useState<GroupMembershipMap | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getGroupMemberships()
+      .then((m) => { if (!cancelled) setMemberships(m); })
+      .catch(() => { /* non-fatal — chips just stay empty */ });
+    return () => { cancelled = true; };
+  }, []);
+
   async function refresh() {
     try {
-      const next = await listAgents();
+      const [next, m] = await Promise.all([
+        listAgents(),
+        getGroupMemberships().catch(() => null),
+      ]);
       setData(next);
+      if (m) setMemberships(m);
     } catch (err) {
       setTopError(err instanceof Error ? err.message : "Failed to reload agents.");
     }
+  }
+
+  function groupsForAgent(agentId: string): GroupSummary[] {
+    return memberships?.agents[agentId] ?? [];
   }
 
   function openCreate() {
@@ -202,6 +228,7 @@ export function AgentsView({ initial, isAdmin }: AgentsViewProps) {
               isAdmin={isAdmin}
               onEdit={() => setEditing(agent)}
               onArchive={() => onArchive(agent)}
+              groups={groupsForAgent(agent.id)}
             />
           ))}
         </div>
@@ -240,11 +267,13 @@ function AgentRow({
   isAdmin,
   onEdit,
   onArchive,
+  groups,
 }: {
   agent: AgentOut;
   isAdmin: boolean;
   onEdit: () => void;
   onArchive: () => void;
+  groups: GroupSummary[];
 }) {
   return (
     <div
@@ -264,8 +293,15 @@ function AgentRow({
         </div>
       </div>
       <div style={{ color: "var(--color-fg2)", fontSize: 13 }}>
-        {agent.description || (
-          <span style={{ color: "var(--color-fg4)" }}>—</span>
+        <div>
+          {agent.description || (
+            <span style={{ color: "var(--color-fg4)" }}>—</span>
+          )}
+        </div>
+        {groups.length > 0 && (
+          <div style={{ marginTop: 4 }}>
+            <GroupChips groups={groups} />
+          </div>
         )}
       </div>
       <div>
