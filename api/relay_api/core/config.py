@@ -88,6 +88,24 @@ class Settings(BaseSettings):
     OAUTH_GOOGLE_CLIENT_ID: str | None = None
     OAUTH_GOOGLE_CLIENT_SECRET: str | None = None
 
+    # ---- Sign in with Slack (OIDC) ----
+    # Same Slack App as the bot install — just uses Slack's OpenID Connect
+    # layer instead of the bot OAuth flow. User scopes are added to the
+    # manifest under oauth_config.scopes.user. Redirect URI is
+    # {RELAY_API_PUBLIC_URL}/api/oauth/slack-signin/callback.
+    # Client id/secret are the same as OAUTH_SLACK_CLIENT_*; the scopes
+    # parameter is what differs at request time.
+    OAUTH_SLACK_USER_SCOPES: str = "openid email profile"
+    # Toggles whether the bridge requires Slack-OIDC-linked users to use
+    # the bot. True = block unregistered Slack users with a friendly
+    # registration link. False = permissive (legacy default-group fallback).
+    RELAY_BOT_REQUIRES_SLACK_LINK: bool = True
+
+    # ---- Resend (transactional email) ----
+    # Set RELAY_EMAIL_PROVIDER=resend in /etc/relay/secrets.env to enable.
+    # The API key + verified sender domain live in Resend dashboard.
+    RESEND_API_KEY: str | None = None
+
     # ---- Transactional email ----
     # "console" prints to stdout (dev). "ses" calls AWS SES (prod, once
     # the relayed.live domain is DNS-verified).

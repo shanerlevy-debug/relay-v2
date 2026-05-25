@@ -6,6 +6,7 @@ import { FormEvent, Suspense, useState } from "react";
 
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { RelayMark } from "@/components/RelayMark";
+import { SlackSignInButton } from "@/components/SlackSignInButton";
 import { ApiError, signup } from "@/lib/api";
 
 const SLACK_BANNER_MESSAGES: Record<string, string> = {
@@ -156,6 +157,9 @@ function SignupPageInner() {
           </div>
         )}
 
+        <div style={{ marginBottom: 10 }}>
+          <SlackSignInButton variant="dark" label="Sign up with Slack" />
+        </div>
         <div style={{ marginBottom: 16 }}>
           <GoogleSignInButton label="Sign up with Google" />
         </div>

@@ -27,6 +27,7 @@ export interface UserOut {
   workspace_id: string;
   email_verified_at: string | null;
   created_at: string;
+  slack_user_verified_at: string | null;
 }
 
 export interface WorkspaceOut {

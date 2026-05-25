@@ -55,6 +55,9 @@ class UserOut(BaseModel):
     workspace_id: uuid.UUID
     email_verified_at: datetime | None
     created_at: datetime
+    # Drives the /home "link your Slack" banner. Presence of this
+    # timestamp = user has completed Slack OIDC sign-in at least once.
+    slack_user_verified_at: datetime | None = None
 
 
 class WorkspaceOut(BaseModel):

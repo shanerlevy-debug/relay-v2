@@ -25,6 +25,7 @@ from relay_api.schemas.users import (
     UserListItem,
     WorkspaceSeatsOut,
 )
+from relay_api.services.email import EmailError, EmailMessage, render_invite_email, send
 from relay_api.services.invites import (
     InviteError,
     count_workspace_seats,
@@ -102,11 +103,12 @@ def post_invite(
     db.commit()
     db.refresh(invite)
 
-    invite_url = f"{settings.RELAY_APP_BASE_URL.rstrip('/')}/invite/{raw_token}"
-    # TODO(week 3): send via services/auth/email — lift Powerloom's
-    # email_providers.py (console | resend | ses) and call:
-    #   email_service.send_invite(to=invite.email, invite_url=invite_url,
-    #                             workspace_name=workspace.display_name)
+    # The invite URL drives Slack OIDC, with the raw token in the query
+    # so the callback can consume the invite + create the linked user.
+    invite_url = (
+        f"{settings.RELAY_API_PUBLIC_URL.rstrip('/')}"
+        f"/api/oauth/slack-signin/start?invite_token={raw_token}"
+    )
     log.info(
         "invite.created",
         invite_id=str(invite.id),
@@ -114,9 +116,34 @@ def post_invite(
         invite_url=invite_url,
     )
 
+    # Best-effort email send. If the email provider fails (no API key,
+    # network error, bad domain), surface the URL to the admin so they
+    # can share manually — don't roll back the invite.
+    email_sent = False
+    try:
+        html, text = render_invite_email(
+            workspace_name=workspace.display_name,
+            invite_url=invite_url,
+            inviter_email=admin.email,
+        )
+        send(EmailMessage(
+            to=invite.email,
+            subject=f"You're invited to {workspace.display_name} on Relay",
+            html=html,
+            text=text,
+        ))
+        email_sent = True
+    except EmailError as e:
+        log.warning(
+            "invite.email_send_failed",
+            invite_id=str(invite.id),
+            error=str(e),
+        )
+
     return {
         "invite": InviteOut.model_validate(invite),
         "invite_url": invite_url,
+        "email_sent": email_sent,
     }
 
 

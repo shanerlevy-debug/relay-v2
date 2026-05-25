@@ -44,6 +44,7 @@ features:
 oauth_config:
   redirect_urls:
     - https://relayed.live/api/oauth/slack/callback
+    - https://relayed.live/api/oauth/slack-signin/callback
   scopes:
     bot:
       - app_mentions:read
@@ -57,6 +58,13 @@ oauth_config:
       - users:read              # used by the Add-to-Slack bootstrap to look up installer
       - users:read.email        # same
       - team:read               # team metadata (future use)
+    user:
+      # "Sign in with Slack" via OpenID Connect — needed for the
+      # per-user identity binding the bridge uses to enforce
+      # registered-users-only access.
+      - openid
+      - email
+      - profile
 
 settings:
   event_subscriptions:

@@ -130,6 +130,11 @@ class User(Base):
     email_verified_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     slack_user_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # Set when this user has completed Slack OIDC sign-in. Bridge access
+    # check uses presence-of-timestamp as proof of identity for license
+    # enforcement. NULL means slack_user_id was set manually or via the
+    # Add-to-Slack installer path (still trusted, just not OIDC-verified).
+    slack_user_verified_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     role: Mapped[str] = mapped_column(
         String(16),

@@ -6,6 +6,7 @@ import { FormEvent, Suspense, useState } from "react";
 
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { RelayMark } from "@/components/RelayMark";
+import { SlackSignInButton } from "@/components/SlackSignInButton";
 import { ApiError, login } from "@/lib/api";
 
 const SLACK_BANNER_MESSAGES: Record<string, string> = {
@@ -13,6 +14,26 @@ const SLACK_BANNER_MESSAGES: Record<string, string> = {
     "An account with this Slack email already exists. Sign in here, then connect Slack from Settings.",
   team_already_connected:
     "This Slack workspace is already connected to a Relay account. Sign in below.",
+};
+
+const SLACK_SIGNIN_BANNER_MESSAGES: Record<string, string> = {
+  unregistered_no_invite:
+    "No Relay account is set up for your Slack identity yet. Ask a workspace admin to invite you.",
+  team_not_installed:
+    "Your Slack workspace isn't using Relay yet. Ask an admin to install it from relayed.live first.",
+  link_team_mismatch:
+    "The Slack account you used belongs to a different team than your Relay workspace.",
+  slack_user_already_claimed:
+    "That Slack identity is already linked to another Relay account in this workspace.",
+  link_user_missing:
+    "Couldn't find your account. Sign in with your password and try again.",
+  invite_bad: "Your invite link is no longer valid. Ask the admin to resend it.",
+  invite_team_mismatch:
+    "Your invite is for a different Slack workspace than the one you signed in with.",
+  user_limit_reached:
+    "This workspace is at its user limit. An admin needs to upgrade or remove someone before you can join.",
+  error:
+    "Something went wrong signing in with Slack. Please try again or contact an admin.",
 };
 
 export default function LoginPage() {
@@ -30,6 +51,10 @@ function LoginPageInner() {
   const searchParams = useSearchParams();
   const slackFlag = searchParams.get("slack");
   const slackBanner = slackFlag ? SLACK_BANNER_MESSAGES[slackFlag] : null;
+  const slackSigninFlag = searchParams.get("slack_signin");
+  const slackSigninBanner = slackSigninFlag
+    ? SLACK_SIGNIN_BANNER_MESSAGES[slackSigninFlag] ?? SLACK_SIGNIN_BANNER_MESSAGES.error
+    : null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -108,7 +133,7 @@ function LoginPageInner() {
           Welcome back
         </h1>
 
-        {slackBanner && (
+        {(slackBanner || slackSigninBanner) && (
           <div
             style={{
               padding: "10px 12px",
@@ -121,10 +146,13 @@ function LoginPageInner() {
               marginBottom: 16,
             }}
           >
-            {slackBanner}
+            {slackSigninBanner ?? slackBanner}
           </div>
         )}
 
+        <div style={{ marginBottom: 10 }}>
+          <SlackSignInButton variant="dark" />
+        </div>
         <div style={{ marginBottom: 16 }}>
           <GoogleSignInButton />
         </div>

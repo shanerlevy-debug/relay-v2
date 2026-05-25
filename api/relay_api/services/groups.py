@@ -14,11 +14,14 @@ from __future__ import annotations
 
 import re
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Literal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from relay_api.core.config import settings
 from relay_api.db.models import (
     Agent,
     AgentGroup,
@@ -386,25 +389,42 @@ def list_groups_for_agent(
 # ---------------------------------------------------------------------------
 
 
-def slack_user_can_access_agent(
+AccessReason = Literal[
+    "allowed",
+    "unregistered",            # no Relay user matches this Slack identity
+    "no_group_access",         # registered, but doesn't share a group with the agent
+    "agent_no_groups",         # agent isn't in any group; unreachable
+]
+
+
+@dataclass(frozen=True)
+class AccessDecision:
+    """Result of a per-message access check. The bridge branches on `reason`
+    to pick the right denial message — unregistered users get a sign-in
+    link, registered-but-not-in-the-right-group users get a different
+    nudge ("ask an admin to add you to a group that includes this agent")."""
+
+    allowed: bool
+    reason: AccessReason
+
+
+def check_slack_user_agent_access(
     db: Session,
     *,
     workspace_id: uuid.UUID,
     slack_user_id: str | None,
     agent_id: uuid.UUID,
-) -> bool:
-    """The access predicate the bridge runs before invoking CMA.
+) -> AccessDecision:
+    """Three-state access check. The bridge uses `reason` to pick UX copy.
 
-    - If we know the Slack user (matched to a Relay user row by
-      slack_user_id), they get the intersection of their group set and
-      the agent's group set.
-    - If we don't know them, they're treated as a member of the default
-      group only. This matches the "everyone is in COMPANYNAME by
-      default" intent — anyone in the Slack workspace can talk to any
-      agent that's still in the default group; restrict by pulling the
-      agent out of default.
+    Decision tree:
+      1. Agent's group set empty → agent_no_groups, deny.
+      2. Slack user → matching Relay user lookup:
+         - found + group intersection → allowed
+         - found + no intersection → no_group_access
+         - not found AND RELAY_BOT_REQUIRES_SLACK_LINK → unregistered
+         - not found AND permissive (legacy) → treat as default-group member
     """
-    # Fast path — the agent's group set
     agent_group_ids = set(
         db.execute(
             select(AgentGroup.group_id)
@@ -414,9 +434,9 @@ def slack_user_can_access_agent(
         ).scalars()
     )
     if not agent_group_ids:
-        # Agent is in no group → unreachable. Admin needs to fix.
-        return False
+        return AccessDecision(False, "agent_no_groups")
 
+    user: User | None = None
     if slack_user_id:
         user = db.execute(
             select(User)
@@ -424,19 +444,46 @@ def slack_user_can_access_agent(
             .where(User.slack_user_id == slack_user_id)
             .where(User.deleted_at.is_(None))
         ).scalar_one_or_none()
-        if user is not None:
-            user_group_ids = set(
-                db.execute(
-                    select(GroupMembership.group_id)
-                    .where(GroupMembership.user_id == user.id)
-                    .join(Group, Group.id == GroupMembership.group_id)
-                    .where(Group.archived_at.is_(None))
-                ).scalars()
-            )
-            return bool(user_group_ids & agent_group_ids)
 
-    # Unknown Slack user → treated as default-group member only.
+    if user is not None:
+        user_group_ids = set(
+            db.execute(
+                select(GroupMembership.group_id)
+                .where(GroupMembership.user_id == user.id)
+                .join(Group, Group.id == GroupMembership.group_id)
+                .where(Group.archived_at.is_(None))
+            ).scalars()
+        )
+        if user_group_ids & agent_group_ids:
+            return AccessDecision(True, "allowed")
+        return AccessDecision(False, "no_group_access")
+
+    # Unknown Slack user — branch on the global enforcement toggle.
+    if settings.RELAY_BOT_REQUIRES_SLACK_LINK:
+        return AccessDecision(False, "unregistered")
+
+    # Permissive (legacy) fallback — treat as default-group member.
     default = default_group_for_workspace(db, workspace_id=workspace_id)
     if default is None:
-        return False
-    return default.id in agent_group_ids
+        return AccessDecision(False, "no_group_access")
+    if default.id in agent_group_ids:
+        return AccessDecision(True, "allowed")
+    return AccessDecision(False, "no_group_access")
+
+
+def slack_user_can_access_agent(
+    db: Session,
+    *,
+    workspace_id: uuid.UUID,
+    slack_user_id: str | None,
+    agent_id: uuid.UUID,
+) -> bool:
+    """Boolean shim — kept for any caller that only needs allow/deny.
+    The bridge uses check_slack_user_agent_access directly to get the
+    reason code for UX branching."""
+    return check_slack_user_agent_access(
+        db,
+        workspace_id=workspace_id,
+        slack_user_id=slack_user_id,
+        agent_id=agent_id,
+    ).allowed

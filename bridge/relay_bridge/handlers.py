@@ -24,7 +24,7 @@ from relay_api.core.config import settings
 from relay_api.core.logging import get_logger
 from relay_api.db.models import AuditLog
 from relay_api.db.session import SessionLocal
-from relay_api.services.groups import slack_user_can_access_agent
+from relay_api.services.groups import check_slack_user_agent_access
 
 from relay_bridge.cma import invoke_agent
 from relay_bridge.routing import RoutingResult, route_message, upsert_thread_pin
@@ -357,32 +357,51 @@ def handle_message(
                 pass
             return
 
-        # Group-based access check. Known Slack users get the
-        # intersection of their group set and the agent's group set;
-        # unknown Slack users are treated as members of the default
-        # group only. If the agent's groups don't overlap, deny.
-        if not slack_user_can_access_agent(
+        # Access check — three-state. Different denial copy for
+        # unregistered (point at Sign in with Slack) vs registered-but-
+        # no-group (ask admin to add to a group).
+        decision = check_slack_user_agent_access(
             db,
             workspace_id=tenant.workspace.id,
             slack_user_id=slack_user_id,
             agent_id=routing.agent.id,
-        ):
+        )
+        if not decision.allowed:
             display_label = (
                 routing.agent.slack_display_name or routing.agent.slug
             )
+            if decision.reason == "unregistered":
+                signin_url = (
+                    f"{settings.RELAY_APP_BASE_URL.rstrip('/')}"
+                    "/api/oauth/slack-signin/start"
+                )
+                deny_text = (
+                    "_You need a Relay account to use this. "
+                    f"<{signin_url}|Sign in with Slack> first, "
+                    "or ask an admin to invite you._"
+                )
+            elif decision.reason == "agent_no_groups":
+                deny_text = (
+                    f"_*{display_label}* isn't in any group right now — "
+                    "an admin needs to add it to one before anyone can "
+                    "reach it._"
+                )
+            else:  # no_group_access
+                deny_text = (
+                    f"_You don't have access to *{display_label}*. "
+                    "Ask an admin to add you to a group that includes it._"
+                )
             try:
                 client.chat_postMessage(
                     channel=channel_id,
                     thread_ts=slack_thread_ts,
-                    text=(
-                        f"_You don't have access to *{display_label}*. "
-                        "Ask an admin to add you to a group that includes it._"
-                    ),
+                    text=deny_text,
                 )
             except SlackApiError:
                 pass
             log.info(
                 "access.denied",
+                reason=decision.reason,
                 workspace_id=str(tenant.workspace.id),
                 slack_user_id=slack_user_id,
                 agent_id=str(routing.agent.id),

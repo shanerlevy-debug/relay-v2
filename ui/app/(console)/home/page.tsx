@@ -73,6 +73,43 @@ export default async function HomePage() {
         </h1>
       </div>
 
+      {/* Link-your-Slack banner — shown until the user has completed
+          Slack OIDC sign-in at least once. Without it, the bot can't
+          recognize them and will reject their messages. */}
+      {session.user.slack_user_verified_at == null && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "12px 14px",
+            background: "var(--color-accent-tint)",
+            border: "1px solid var(--color-accent-ring)",
+            borderRadius: "var(--radius-sm)",
+            marginBottom: 18,
+            fontSize: 13,
+            color: "var(--color-fg2)",
+          }}
+        >
+          <Slack size={18} style={{ color: "var(--color-accent)", flexShrink: 0 }} />
+          <div style={{ flex: 1, lineHeight: 1.5 }}>
+            <strong style={{ color: "var(--color-fg1)" }}>
+              Link your Slack account
+            </strong>{" "}
+            so the bot can recognize you. Without this, your messages to
+            <span className="mono"> @relay</span> in Slack will be rejected.
+          </div>
+          <a
+            href="/api/oauth/slack-signin/start"
+            className="rl-btn rl-btn-primary"
+            style={{ fontSize: 12, padding: "6px 12px", flexShrink: 0 }}
+          >
+            Sign in with Slack
+            <ArrowRight size={12} />
+          </a>
+        </div>
+      )}
+
       {/* Top row — setup state */}
       <div className="rl-home-cards" style={{ marginBottom: 16 }}>
         <SetupCard
